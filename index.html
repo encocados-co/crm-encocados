@@ -1,0 +1,3652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>encocados — CRM</title>
+<link rel="icon" type="image/png" href="encocados-icon.png">
+<link rel="apple-touch-icon" href="encocados-icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Darumadrop+One&family=Patrick+Hand&family=Lilita+One&family=Quicksand:wght@400;500;600;700&display=swap');
+
+  :root {
+    --negro: #1A1A1A;
+    --negro2: #F5EDE0;
+    --negro3: #FFF0DC;
+    --menta: #E5461A;
+    --menta-dark: #C73A14;
+    --menta-glow: rgba(229,70,26,0.08);
+    --terracota: #F5CA85;
+    --terra-glow: rgba(245,202,133,0.15);
+    --crema: #1A1A1A;
+    --dorado: #BCC2DC;
+    --rojo: #E53935;
+    --verde: #4CAF50;
+    --azul: #42A5F5;
+    --morado: #AB47BC;
+    --gris: #777;
+    --borde: rgba(0,0,0,0.08);
+    --card: rgba(0,0,0,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Quicksand', sans-serif;
+    background: var(--negro3);
+    color: var(--crema);
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 220px; background: #FFFFFF;
+    border-right: 1px solid rgba(0,0,0,0.08);
+    padding: 24px 16px;
+    display: flex; flex-direction: column;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    font-family: 'Darumadrop One', sans-serif;
+    font-size: 20px; color: var(--menta);
+    margin-bottom: 6px;
+  }
+  .sidebar-sub {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 11px; color: var(--menta);
+    margin-bottom: 30px;
+  }
+
+  .nav-item {
+    padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    color: rgba(0,0,0,0.4); cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px; transition: all 0.2s;
+  }
+  .nav-item:hover { background: rgba(229,70,26,0.05); color: var(--negro); }
+  .nav-item.active { background: var(--menta-glow); color: var(--menta); font-weight: 700; }
+  .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+  .nav-item .badge {
+    margin-left: auto; background: var(--menta);
+    color: var(--negro); font-size: 10px; font-weight: 800;
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    font-size: 9px; color: rgba(0,0,0,0.2);
+    text-align: center;
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 220px;
+    padding: 24px 30px;
+    min-height: 100vh;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-family: 'Lilita One', sans-serif;
+    font-size: 26px; font-weight: 800;
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    border: none; font-family: 'Quicksand', sans-serif;
+    transition: transform 0.2s;
+  }
+  .btn:hover { transform: scale(1.03); }
+  .btn-primary { background: var(--menta); color: #FFFFFF; }
+  .btn-secondary { background: #FFF8EE; color: #1A1A1A; border: 1px solid rgba(0,0,0,0.08); }
+  .btn-danger { background: rgba(229,57,57,0.15); color: var(--rojo); border: 1px solid rgba(229,57,57,0.2); }
+  .btn-small { padding: 6px 14px; font-size: 11px; border-radius: 8px; }
+
+  /* STATS CARDS */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 14px; margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px; padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .stat-label {
+    font-size: 11px; color: var(--gris);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Lilita One', sans-serif;
+    font-size: 28px; font-weight: 900;
+  }
+
+  .stat-sub { font-size: 11px; color: var(--gris); margin-top: 4px; }
+
+  .stat-card.menta .stat-value { color: var(--menta); }
+  .stat-card.terra .stat-value { color: var(--terracota); }
+  .stat-card.dorado .stat-value { color: var(--dorado); }
+  .stat-card.verde .stat-value { color: var(--verde); }
+
+  /* TABLE */
+  .table-container {
+    background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .table-header {
+    padding: 14px 20px; display: flex;
+    align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .table-title { font-size: 14px; font-weight: 700; }
+
+  .table-filters {
+    display: flex; gap: 8px;
+  }
+
+  .filter-btn {
+    padding: 5px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    background: #FFFFFF; color: var(--gris);
+    border: 1px solid rgba(0,0,0,0.08); transition: all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active { background: var(--menta-glow); color: var(--menta); border-color: rgba(229,70,26,0.3); }
+
+  table {
+    width: 100%; border-collapse: collapse;
+  }
+
+  th {
+    padding: 10px 16px; text-align: left;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--gris); border-bottom: 1px solid var(--borde);
+    background: rgba(0,0,0,0.02);
+  }
+
+  td {
+    padding: 12px 16px; font-size: 13px;
+    border-bottom: 1px solid var(--borde);
+    transition: background 0.2s;
+  }
+
+  tr:hover td { background: rgba(229,70,26,0.03); }
+
+  /* PLAN BADGES */
+  .plan-badge {
+    padding: 4px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 700;
+    display: inline-block;
+  }
+  .plan-semanal { background: rgba(229,70,26,0.1); color: #E5461A; }
+  .plan-quincenal { background: rgba(188,194,220,0.25); color: #7A80A0; }
+  .plan-mensual { background: rgba(245,202,133,0.2); color: #B8860B; }
+
+  /* STATUS */
+  .status {
+    padding: 4px 10px; border-radius: 8px;
+    font-size: 11px; font-weight: 600;
+    display: inline-block;
+  }
+  .status-activo { background: rgba(76,175,80,0.12); color: var(--verde); }
+  .status-pendiente { background: rgba(255,152,0,0.12); color: #FFA000; }
+  .status-confirmado { background: rgba(66,165,245,0.12); color: var(--azul); }
+  .status-retirado { background: rgba(229,57,57,0.1); color: var(--rojo); }
+
+  /* DELIVERY TYPE */
+  .delivery-type {
+    padding: 3px 10px; border-radius: 6px;
+    font-size: 10px; font-weight: 600;
+  }
+  .delivery-dia { background: rgba(66,165,245,0.12); color: var(--azul); }
+  .delivery-noche { background: rgba(171,71,188,0.12); color: var(--morado); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: #FFFFFF; border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 20px; padding: 30px;
+    width: 500px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    color: var(--negro);
+  }
+
+  .modal-title {
+    font-family: 'Lilita One', sans-serif;
+    font-size: 22px; font-weight: 800;
+    margin-bottom: 20px;
+  }
+
+  .form-group { margin-bottom: 14px; }
+
+  .form-label {
+    font-size: 11px; font-weight: 600; color: var(--gris);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 6px; display: block;
+  }
+
+  .form-input {
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: #FFF8EE; border: 1px solid rgba(0,0,0,0.08);
+    color: #1A1A1A; font-size: 14px;
+    font-family: 'Quicksand', sans-serif;
+    outline: none; transition: border 0.2s;
+  }
+  .form-input:focus { border-color: var(--menta); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .form-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--borde);
+  }
+
+  /* ENTREGA CARDS */
+  .entrega-day {
+    background: #FFFFFF; border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px; margin-bottom: 14px; overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .entrega-day-header {
+    padding: 12px 20px; display: flex;
+    align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--borde);
+    cursor: pointer;
+  }
+
+  .entrega-day-header h3 {
+    font-family: 'Lilita One', sans-serif;
+    font-size: 16px; font-weight: 800;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .nivel-badge {
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 5px;
+  }
+  .nota-cell { cursor: pointer; }
+  .nota-link { color: #E5461A; font-size: 10px; font-weight: 700; }
+
+  .nivel-simple { background: rgba(139,173,95,0.15); color: #8BAD5F; }
+  .nivel-intermedio { background: rgba(201,169,110,0.15); color: var(--dorado); }
+  .nivel-premium { background: rgba(196,112,75,0.2); color: var(--terracota); }
+
+  .entrega-count { font-size: 12px; color: var(--gris); }
+  .entrega-count strong { color: var(--menta); }
+
+  .entrega-day-body { padding: 12px 20px; }
+
+  .entrega-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px; border-radius: 10px;
+    margin-bottom: 4px; transition: background 0.2s;
+  }
+  .entrega-item:hover { background: var(--card); }
+
+  .entrega-check {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 2px solid var(--borde); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .entrega-check.checked {
+    background: var(--menta); border-color: var(--menta);
+    color: #FFFFFF; font-size: 12px; font-weight: 900;
+  }
+
+  .entrega-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .entrega-meta { font-size: 11px; color: var(--gris); }
+
+  /* SEARCH */
+  .search-input {
+    padding: 8px 14px 8px 36px; border-radius: 10px;
+    background: #FFFFFF; border: 1px solid rgba(0,0,0,0.08);
+    color: #1A1A1A; font-size: 13px; width: 240px;
+    font-family: 'Quicksand', sans-serif; outline: none;
+  }
+  .search-input:focus { border-color: var(--menta); }
+
+  .search-wrap { position: relative; }
+  .search-wrap::before {
+    content: '🔍'; position: absolute;
+    left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 13px;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--gris);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 18px; color: var(--crema); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; margin-bottom: 20px; }
+
+  /* PAYMENT ROW COLORS */
+  tr.pago-pagado td { border-left: 3px solid var(--verde); }
+  tr.pago-pendiente td { border-left: 3px solid #FFA000; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { width: 60px; padding: 16px 8px; }
+    .sidebar-logo, .sidebar-sub, .nav-item span, .sidebar-footer { display: none; }
+    .nav-item { justify-content: center; padding: 10px; }
+    .main { margin-left: 60px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* LOGIN SCREEN */
+  body.not-logged-in .sidebar,
+  body.not-logged-in .main { display: none !important; }
+  #loginScreen { display: none; }
+  body.not-logged-in #loginScreen {
+    display: flex; position: fixed; inset: 0;
+    background: linear-gradient(135deg, #FFF0DC 0%, #F5CA85 100%);
+    align-items: center; justify-content: center; z-index: 9999;
+  }
+  .login-card {
+    background: #fff; border-radius: 20px; padding: 40px 36px;
+    width: 380px; max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .login-logo {
+    font-family: 'Darumadrop One', sans-serif;
+    font-size: 32px; color: #E5461A; text-align: center;
+    margin-bottom: 4px;
+  }
+  .login-sub {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 13px; color: #E5461A; text-align: center;
+    margin-bottom: 28px;
+  }
+  .login-title { font-size: 14px; font-weight: 600; color: #1A1A1A; margin-bottom: 18px; text-align: center; }
+  .login-field { margin-bottom: 14px; }
+  .login-field label { font-size: 11px; font-weight: 600; color: #555; display: block; margin-bottom: 5px; }
+  .login-field input {
+    width: 100%; padding: 11px 14px;
+    border: 1px solid rgba(0,0,0,0.12); border-radius: 10px;
+    font-family: 'Quicksand'; font-size: 13px;
+    background: #FAFAFA;
+  }
+  .login-field input:focus { outline: none; border-color: #E5461A; background: #fff; }
+  .login-btn {
+    width: 100%; padding: 13px; margin-top: 8px;
+    background: #E5461A; color: #fff; border: none; border-radius: 10px;
+    font-family: 'Quicksand'; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .login-btn:hover { background: #C73A14; }
+  .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .login-error {
+    color: #E53935; font-size: 12px; text-align: center;
+    margin-top: 12px; min-height: 16px;
+  }
+  .login-loading {
+    font-size: 12px; color: #999; text-align: center; margin-top: 12px;
+  }
+
+  /* User badge en sidebar */
+  .user-badge {
+    padding: 10px 12px; margin-top: auto; margin-bottom: 8px;
+    background: #FFF0DC; border-radius: 10px;
+    font-size: 11px; color: #555;
+  }
+  .user-badge .user-name { font-weight: 700; color: #E5461A; font-size: 12px; }
+  .user-badge .user-role { font-size: 10px; color: #888; margin-top: 2px; text-transform: uppercase; }
+  .logout-btn {
+    padding: 8px 12px; margin-top: 6px;
+    background: transparent; color: #999; border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px; font-size: 11px; cursor: pointer; width: 100%;
+    font-family: 'Quicksand';
+  }
+  .logout-btn:hover { background: #f5f5f5; color: #E5461A; }
+
+  /* Connection indicator */
+  .sync-badge {
+    position: fixed; top: 16px; right: 16px; z-index: 500;
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    display: none;
+  }
+  .sync-badge.show { display: inline-block; }
+  .sync-badge.syncing { background: #FFF0DC; color: #E5461A; }
+  .sync-badge.error { background: #ffe5e5; color: #E53935; }
+</style>
+</head>
+<body class="not-logged-in">
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">encocados</div>
+    <div class="login-sub">tu almuerzo de chef, en coca</div>
+    <div class="login-title">Acceso al CRM</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" autocomplete="username" placeholder="tucorreo@ejemplo.com">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-loading" id="loginLoading" style="display:none;">Verificando...</div>
+  </div>
+</div>
+
+<!-- SYNC BADGE -->
+<div class="sync-badge" id="syncBadge"></div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">encocados</div>
+  <div class="sidebar-sub">tu almuerzo de chef, en coca</div>
+
+  <div class="nav-item active" onclick="showPage('dashboard')">
+    <span class="icon">📊</span>
+    <span>Dashboard</span>
+  </div>
+  <div class="nav-item" onclick="showPage('clientes')">
+    <span class="icon">👥</span>
+    <span>Clientes</span>
+    <span class="badge" id="clientCount">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('entregas')">
+    <span class="icon">🍲</span>
+    <span>Entregas</span>
+  </div>
+  <div class="nav-item" onclick="showPage('pagos')">
+    <span class="icon">💰</span>
+    <span>Pagos</span>
+  </div>
+  <div class="nav-item" onclick="showPage('financiero')">
+    <span class="icon">📈</span>
+    <span>Financiero</span>
+  </div>
+  <div class="nav-item" onclick="showPage('cocas')">
+    <span class="icon">♻️</span>
+    <span>Cocas</span>
+  </div>
+  <div class="nav-item" onclick="showPage('menus')">
+    <span class="icon">📋</span>
+    <span>Menus</span>
+  </div>
+  <div class="nav-item" onclick="showPage('almanaque')">
+    <span class="icon">📅</span>
+    <span>Almanaque</span>
+  </div>
+  <div class="nav-item" onclick="showPage('recetario')">
+    <span class="icon">📖</span>
+    <span>Recetario</span>
+    <span class="badge" id="recetaCount">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('productos')">
+    <span class="icon">🥬</span>
+    <span>Productos</span>
+  </div>
+  <div class="nav-item" onclick="showPage('proveedores')">
+    <span class="icon">🏪</span>
+    <span>Proveedores</span>
+  </div>
+  <div class="nav-item" onclick="showPage('ruta')">
+    <span class="icon">🛵</span>
+    <span>Ruta</span>
+  </div>
+  <div class="nav-item" onclick="showPage('usuarios')" id="navUsuarios">
+    <span class="icon">🔑</span>
+    <span>Usuarios</span>
+  </div>
+
+  <div class="nav-item" onclick="exportBackup()" style="margin-top:16px; border-top:1px solid var(--borde); padding-top:12px;">
+    <span class="icon">💾</span>
+    <span>Exportar CRM</span>
+  </div>
+
+  <div class="user-badge" id="userBadge" style="display:none;">
+    <div class="user-name" id="userName">—</div>
+    <div class="user-role" id="userRole">—</div>
+    <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+
+  <div class="sidebar-footer">encocados CRM v3.0<br>Abril 2026</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div class="page-title">Dashboard</div>
+      <div style="font-size:12px; color:var(--gris);">Semana de lanzamiento | 20-24 Abril 2026</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card menta">
+        <div class="stat-label">Clientes Activos</div>
+        <div class="stat-value" id="dash-clientes">0</div>
+        <div class="stat-sub" id="dash-planes">0 sem · 0 quin · 0 men</div>
+      </div>
+      <div class="stat-card terra">
+        <div class="stat-label">Ingresos Semana</div>
+        <div class="stat-value" id="dash-ingresos">$0</div>
+        <div class="stat-sub">Planes + Kits</div>
+      </div>
+      <div class="stat-card dorado">
+        <div class="stat-label">Entregas Hoy</div>
+        <div class="stat-value" id="dash-entregas">0/0</div>
+        <div class="stat-sub">Completadas / Total</div>
+      </div>
+      <div class="stat-card verde">
+        <div class="stat-label">Desechables Ahorrados</div>
+        <div class="stat-value" id="dash-eco">0</div>
+        <div class="stat-sub">Esta semana</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div class="table-container" style="padding:20px;">
+        <div class="table-title" style="margin-bottom:14px;">Menu Semana Lanzamiento</div>
+        <div id="dash-menu"></div>
+      </div>
+      <div class="table-container" style="padding:20px;">
+        <div class="table-title" style="margin-bottom:14px;">Ultimos Pagos</div>
+        <div id="dash-pagos"></div>
+      </div>
+    </div>
+
+    <!-- IMPORT BOX: aparece solo si hay data en localStorage y Firestore está vacío -->
+    <div id="importBox" style="display:none; margin-top:20px; background:#FFF0DC; border:2px dashed #E5461A; border-radius:14px; padding:20px;">
+      <div style="font-weight:700; color:#E5461A; margin-bottom:6px;">📦 Datos antiguos detectados</div>
+      <div style="font-size:12px; color:#666; margin-bottom:12px;">
+        Encontramos datos en la versión anterior del CRM (localStorage). ¿Los subes a la nube?
+      </div>
+      <div id="importPreview" style="font-size:11px; color:#777; margin-bottom:12px;"></div>
+      <button class="btn btn-primary" onclick="importarDesdeLocalStorage()">Importar a la nube</button>
+      <button class="btn btn-secondary" onclick="descartarImport()" style="margin-left:8px;">Descartar</button>
+    </div>
+  </div>
+
+  <!-- ===== CLIENTES ===== -->
+  <div class="page" id="page-clientes">
+    <div class="page-header">
+      <div class="page-title">Clientes</div>
+      <div style="display:flex; gap:10px;">
+        <div class="search-wrap">
+          <input type="text" class="search-input" placeholder="Buscar cliente..." oninput="filterClients(this.value)">
+        </div>
+        <button class="btn btn-primary" onclick="openModal('add')">+ Nuevo Cliente</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <div class="table-title">Todos los clientes</div>
+        <div class="table-filters">
+          <div class="filter-btn active" onclick="filterPlan('todos', this)">Todos</div>
+          <div class="filter-btn" onclick="filterPlan('Semanal', this)">Semanal</div>
+          <div class="filter-btn" onclick="filterPlan('Quincenal', this)">Quincenal</div>
+          <div class="filter-btn" onclick="filterPlan('Mensual', this)">Mensual</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Telefono</th>
+            <th>Plan</th>
+            <th>Entrega</th>
+            <th>Kit</th>
+            <th>Estado</th>
+            <th>Vence</th>
+            <th>Notas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="clientesBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyClients">
+        <div class="icon">👥</div>
+        <h3>Aun no hay clientes</h3>
+        <p>Agrega tu primer cliente para comenzar</p>
+        <button class="btn btn-primary" onclick="openModal('add')">+ Nuevo Cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ENTREGAS ===== -->
+  <div class="page" id="page-entregas">
+    <div class="page-header">
+      <div class="page-title">Entregas Diarias</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <select class="form-input" style="width:auto;" id="entregaDia" onchange="renderEntregas()">
+          <option value="lunes">Lunes 20 — Lomo cerdo (Simple)</option>
+          <option value="martes">Martes 21 — Ceviche (Intermedio)</option>
+          <option value="miercoles">Miercoles 22 — Pasta (Intermedio)</option>
+          <option value="jueves">Jueves 23 — Lasagna (Premium)</option>
+          <option value="viernes">Viernes 24 — Costilla (Premium)</option>
+        </select>
+      </div>
+    </div>
+    <div id="entregasContent"></div>
+  </div>
+
+  <!-- ===== PAGOS ===== -->
+  <div class="page" id="page-pagos">
+    <div class="page-header">
+      <div class="page-title">Pagos</div>
+      <button class="btn btn-primary" onclick="openPaymentModal()">+ Registrar Pago</button>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+      <div class="stat-card verde">
+        <div class="stat-label">Total Pagado</div>
+        <div class="stat-value" id="pago-total">$0</div>
+      </div>
+      <div class="stat-card terra">
+        <div class="stat-label">Pendiente de Cobro</div>
+        <div class="stat-value" id="pago-pendiente">$0</div>
+      </div>
+      <div class="stat-card dorado">
+        <div class="stat-label">Total Kits</div>
+        <div class="stat-value" id="pago-kits">$0</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Metodo</th><th>Estado</th></tr>
+        </thead>
+        <tbody id="pagosBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyPagos">
+        <div class="icon">💰</div>
+        <h3>Sin pagos registrados</h3>
+        <p>Los pagos aparecen aqui cuando los registres</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FINANCIERO (COMPRAS / EGRESOS) ===== -->
+  <div class="page" id="page-financiero">
+    <div class="page-header">
+      <div class="page-title">Financiero</div>
+      <button class="btn btn-primary" onclick="openCompraModal()">+ Registrar Compra</button>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      <div class="stat-card verde">
+        <div class="stat-label">Ingresos (mes)</div>
+        <div class="stat-value" id="fin-ingresos">$0</div>
+      </div>
+      <div class="stat-card terra">
+        <div class="stat-label">Egresos (mes)</div>
+        <div class="stat-value" id="fin-egresos">$0</div>
+      </div>
+      <div class="stat-card menta">
+        <div class="stat-label">Balance (mes)</div>
+        <div class="stat-value" id="fin-balance">$0</div>
+      </div>
+      <div class="stat-card dorado">
+        <div class="stat-label">Compras totales</div>
+        <div class="stat-value" id="fin-count">0</div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+      <button class="filter-btn active" onclick="filterCompras('todas', this)">Todas</button>
+      <button class="filter-btn" onclick="filterCompras('Proteínas', this)">Proteínas</button>
+      <button class="filter-btn" onclick="filterCompras('Vegetales', this)">Vegetales</button>
+      <button class="filter-btn" onclick="filterCompras('Empaque', this)">Empaque</button>
+      <button class="filter-btn" onclick="filterCompras('Marketing', this)">Marketing</button>
+      <button class="filter-btn" onclick="filterCompras('Servicios', this)">Servicios</button>
+      <button class="filter-btn" onclick="filterCompras('Transporte', this)">Transporte</button>
+      <button class="filter-btn" onclick="filterCompras('Otros', this)">Otros</button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Proveedor</th><th>Monto</th><th>Método</th><th>Notas</th><th></th></tr>
+        </thead>
+        <tbody id="comprasBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyCompras">
+        <div class="icon">📈</div>
+        <h3>Sin compras registradas</h3>
+        <p>Registra tus compras para llevar el balance</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== COCAS ===== -->
+  <div class="page" id="page-cocas">
+    <div class="page-header">
+      <div class="page-title">Control de Cocas</div>
+    </div>
+
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      <strong style="color:#E5461A;">Dinámica de rotación:</strong> cada cliente maneja 2 sets (A y B). Cuando entregas almuerzo con un set, recibes el del día anterior limpio. El cliente nunca tiene cocas vacías, siempre tiene el set del día en uso.
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+      <div class="stat-card terra">
+        <div class="stat-label">Pendientes de devolver hoy</div>
+        <div class="stat-value" id="coca-pendientes-hoy">0</div>
+      </div>
+      <div class="stat-card menta">
+        <div class="stat-label">Devoluciones OK este mes</div>
+        <div class="stat-value" id="coca-ok-mes">0</div>
+      </div>
+      <div class="stat-card dorado">
+        <div class="stat-label">Clientes con retrasos</div>
+        <div class="stat-value" id="coca-retrasos">0</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Cliente</th><th>Set actual</th><th>Última entrega</th><th>Devoluciones OK</th><th>Retrasos</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="cocasBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== MENUS SEMANALES ===== -->
+  <div class="page" id="page-menus">
+    <div class="page-header">
+      <div class="page-title">Menus Semanales</div>
+      <button class="btn btn-primary" onclick="openMenuModal()">+ Nuevo Menu Semanal</button>
+    </div>
+
+    <div id="menusContent"></div>
+
+    <div class="empty-state" id="emptyMenus">
+      <div class="icon">📋</div>
+      <h3>Sin menus creados</h3>
+      <p>Crea tu primer menu semanal</p>
+      <button class="btn btn-primary" onclick="openMenuModal()">+ Nuevo Menu</button>
+    </div>
+  </div>
+
+  <!-- ===== RECETARIO ===== -->
+  <div class="page" id="page-recetario">
+    <div class="page-header">
+      <div class="page-title">Recetario</div>
+      <div style="display:flex; gap:10px;">
+        <div class="search-wrap">
+          <input type="text" class="search-input" placeholder="Buscar receta..." oninput="filterRecetas(this.value)">
+        </div>
+        <button class="btn btn-primary" onclick="openRecetaModal()">+ Nueva Receta</button>
+      </div>
+    </div>
+
+    <div class="table-filters" style="margin-bottom:16px;">
+      <div class="filter-btn active" onclick="filterRecetaCat('todos', this)">Todas</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Seco', this)">Secos</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Seco/Proteina', this)">· Proteinas</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Seco/Guarnicion', this)">· Guarniciones</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Sopa', this)">Sopas</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Ensalada', this)">Ensaladas</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Bebida', this)">Bebidas</div>
+      <div class="filter-btn" onclick="filterRecetaCat('Extra', this)">Extras</div>
+    </div>
+
+    <div id="recetasGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:14px;"></div>
+
+    <div class="empty-state" id="emptyRecetas">
+      <div class="icon">📖</div>
+      <h3>Recetario vacio</h3>
+      <p>Agrega tu primera receta para empezar a construir tu biblioteca</p>
+      <button class="btn btn-primary" onclick="openRecetaModal()">+ Nueva Receta</button>
+    </div>
+  </div>
+
+  <!-- ===== ALMANAQUE ===== -->
+  <div class="page" id="page-almanaque">
+    <div class="page-header">
+      <div class="page-title">Almanaque de Entregas</div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-secondary" onclick="almPrevMonth()">&larr; Mes anterior</button>
+        <span id="almMonthLabel" style="font-family:'Lilita One';font-size:20px;min-width:180px;text-align:center;"></span>
+        <button class="btn btn-secondary" onclick="almNextMonth()">Mes siguiente &rarr;</button>
+      </div>
+    </div>
+
+    <div id="almStats" style="display:flex; gap:14px; margin-bottom:20px;"></div>
+    <div id="almCalendar"></div>
+  </div>
+
+  <!-- ===== PRODUCTOS ===== -->
+  <div class="page" id="page-productos">
+    <div class="page-header">
+      <div class="page-title">Productos e Insumos</div>
+      <button class="btn btn-primary" onclick="openProductoModal()">+ Nuevo Producto</button>
+    </div>
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      Registra tus insumos (carnes, vegetales, granos, empaques) con su costo por unidad. Te ayuda a calcular costo por porción en el recetario.
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+      <button class="filter-btn active" onclick="filterProductos('todos', this)">Todos</button>
+      <button class="filter-btn" onclick="filterProductos('Proteínas', this)">Proteínas</button>
+      <button class="filter-btn" onclick="filterProductos('Vegetales', this)">Vegetales</button>
+      <button class="filter-btn" onclick="filterProductos('Granos', this)">Granos</button>
+      <button class="filter-btn" onclick="filterProductos('Lácteos', this)">Lácteos</button>
+      <button class="filter-btn" onclick="filterProductos('Especias', this)">Especias</button>
+      <button class="filter-btn" onclick="filterProductos('Empaque', this)">Empaque</button>
+      <button class="filter-btn" onclick="filterProductos('Otros', this)">Otros</button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Producto</th><th>Categoría</th><th>Proveedor</th><th>Costo</th><th>Unidad</th><th>Última actualización</th><th></th></tr>
+        </thead>
+        <tbody id="productosBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyProductos">
+        <div class="icon">🥬</div>
+        <h3>Sin productos</h3>
+        <p>Agrega tus insumos con sus costos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROVEEDORES ===== -->
+  <div class="page" id="page-proveedores">
+    <div class="page-header">
+      <div class="page-title">Proveedores</div>
+      <button class="btn btn-primary" onclick="openProveedorModal()">+ Nuevo Proveedor</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Tipo</th><th>Contacto</th><th>Teléfono</th><th>Dirección</th><th>Notas</th><th></th></tr>
+        </thead>
+        <tbody id="proveedoresBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyProveedores">
+        <div class="icon">🏪</div>
+        <h3>Sin proveedores</h3>
+        <p>Registra tus proveedores aquí</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RUTA ===== -->
+  <div class="page" id="page-ruta">
+    <div class="page-header">
+      <div class="page-title">Ruta de domicilio</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="date" class="form-input" id="rutaFecha" style="padding:8px 12px;" onchange="renderRuta()">
+        <button class="btn btn-primary" onclick="abrirRutaEnMaps()">📍 Abrir en Maps</button>
+      </div>
+    </div>
+
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      Selecciona la dirección para cada entrega del día. Al terminar la ruta marca cada parada como entregada.
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:16px;">
+      <div class="stat-card menta">
+        <div class="stat-label">Total paradas</div>
+        <div class="stat-value" id="ruta-total">0</div>
+      </div>
+      <div class="stat-card verde">
+        <div class="stat-label">Entregadas</div>
+        <div class="stat-value" id="ruta-entregadas">0</div>
+      </div>
+      <div class="stat-card terra">
+        <div class="stat-label">Pendientes</div>
+        <div class="stat-value" id="ruta-pendientes">0</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Cliente</th><th>Dirección del día</th><th>Barrio</th><th>Tel.</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="rutaBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyRuta">
+        <div class="icon">🛵</div>
+        <h3>Sin entregas para este día</h3>
+        <p>Selecciona otra fecha o programa clientes</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== USUARIOS (solo admin) ===== -->
+  <div class="page" id="page-usuarios">
+    <div class="page-header">
+      <div class="page-title">Usuarios del equipo</div>
+      <button class="btn btn-primary" onclick="openUsuarioModal()">+ Nuevo Usuario</button>
+    </div>
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      Aquí creas cuentas para tu equipo. Cada persona entra con su email + contraseña. Como admin tú decides qué rol tiene cada uno.
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="usuariosBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyUsuarios">
+        <div class="icon">🔑</div>
+        <h3>Solo estás tú</h3>
+        <p>Agrega a tu equipo</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL MENU SEMANAL -->
+<div class="modal-overlay" id="menuModal">
+  <div class="modal" style="width:650px;">
+    <div class="modal-title">Nuevo Menu Semanal</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre / Semana</label>
+        <input type="text" class="form-input" id="mNombre" placeholder="Ej: Semana 1 - Lanzamiento">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha inicio</label>
+        <input type="date" class="form-input" id="mFecha" value="2026-04-20">
+      </div>
+    </div>
+
+    <div style="margin-top:14px;">
+      <div id="menuDiasForm"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeMenuModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMenu()">Guardar Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECETA -->
+<div class="modal-overlay" id="recetaModal">
+  <div class="modal" style="width:550px;">
+    <div class="modal-title" id="recetaModalTitle">Nueva Receta</div>
+    <input type="hidden" id="recetaEditIndex" value="-1">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre del plato</label>
+        <input type="text" class="form-input" id="rNombre" placeholder="Ej: Costilla glaseada BBQ">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <select class="form-input" id="rCategoria" onchange="toggleSubCategoria()">
+          <option value="Seco">Seco / Plato fuerte</option>
+          <option value="Sopa">Sopa / Crema</option>
+          <option value="Ensalada">Ensalada</option>
+          <option value="Bebida">Bebida</option>
+          <option value="Extra">Extra (croissant, pan, etc)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" id="rSubCategoriaRow">
+      <div class="form-group">
+        <label class="form-label">Tipo de Seco</label>
+        <select class="form-input" id="rSubCategoria">
+          <option value="Proteina">Proteina</option>
+          <option value="Guarnicion">Guarnicion</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nivel</label>
+        <select class="form-input" id="rNivel">
+          <option value="Simple">Simple</option>
+          <option value="Intermedio">Intermedio</option>
+          <option value="Premium">Premium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Costo por porcion ($)</label>
+        <input type="number" class="form-input" id="rCosto" placeholder="Ej: 5673">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Ingredientes (por porcion)</label>
+      <textarea class="form-input" id="rIngredientes" rows="3" style="resize:vertical;" placeholder="Ej: Lomo cerdo 150g, cebolla 25g, pimenton 25g, soya 10g, arroz 90g, papa criolla 3und..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Preparacion</label>
+      <textarea class="form-input" id="rPreparacion" rows="4" style="resize:vertical;" placeholder="Paso a paso de la preparacion..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Acompanantes</label>
+      <input type="text" class="form-input" id="rAcomp" placeholder="Ej: Arroz con zanahoria, papa criolla dorada">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas del chef</label>
+      <input type="text" class="form-input" id="rNotas" placeholder="Ej: Sellar a fuego alto, no excederse con la soya">
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeRecetaModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveReceta()">Guardar Receta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER RECETA -->
+<div class="modal-overlay" id="viewRecetaModal">
+  <div class="modal" style="width:550px;">
+    <div id="viewRecetaContent"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('viewRecetaModal').classList.remove('show')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO CLIENTE -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Nuevo Cliente</div>
+    <input type="hidden" id="editIndex" value="-1">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" class="form-input" id="fNombre" placeholder="Ej: Maria Lopez">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telefono</label>
+        <input type="text" class="form-input" id="fTelefono" placeholder="300 123 4567">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Direcciones <span style="font-size:10px; color:#999; font-weight:400;">(la primera es la principal y es obligatoria)</span></label>
+      <div id="direccionesList"></div>
+      <button type="button" class="btn btn-small btn-secondary" onclick="agregarDireccion()" style="margin-top:8px;">+ Agregar otra dirección</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Plan</label>
+        <select class="form-input" id="fPlan" onchange="updatePrecio()">
+          <option value="Semanal">Semanal — $90.000</option>
+          <option value="Quincenal">Quincenal — $170.000</option>
+          <option value="Mensual">Mensual — $320.000</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tipo de entrega</label>
+        <select class="form-input" id="fEntrega">
+          <option value="Domicilio dia">Domicilio dia (mediodia)</option>
+          <option value="Entrega nocturna">Entrega nocturna (dia anterior)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select class="form-input" id="fEstado">
+          <option value="Por confirmar">Por confirmar</option>
+          <option value="Activo">Activo</option>
+          <option value="Pausado">Pausado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fecha inicio</label>
+        <input type="date" class="form-input" id="fInicio">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kit de cocas</label>
+        <select class="form-input" id="fKit">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Entregado">Entregado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas / Alergias</label>
+      <input type="text" class="form-input" id="fNotas" placeholder="Ej: Alergica al mango, no come cerdo...">
+    </div>
+
+    <!-- CALENDARIO DE DIAS -->
+    <div class="form-group" id="calendarSection">
+      <label class="form-label">Dias de entrega — Marca los dias en que recibira coca</label>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <button type="button" class="btn btn-secondary btn-small" onclick="calPrev()">&larr;</button>
+        <span id="calMonthLabel" style="font-weight:700; font-size:13px; min-width:140px; text-align:center;"></span>
+        <button type="button" class="btn btn-secondary btn-small" onclick="calNext()">&rarr;</button>
+        <span style="margin-left:auto; font-size:11px; color:#777;">Seleccionados: <strong id="calCount" style="color:#E5461A;">0</strong> / <span id="calMax">5</span></span>
+      </div>
+      <div id="calGrid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:3px;"></div>
+      <div style="display:flex; gap:12px; margin-top:8px; font-size:10px; color:#999;">
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#E5461A;vertical-align:middle;margin-right:3px;"></span> Seleccionado</span>
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#f0f0f0;vertical-align:middle;margin-right:3px;"></span> Fin de semana / Festivo</span>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClient()">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGO -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <div class="modal-title">Registrar Pago</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cliente</label>
+        <select class="form-input" id="pCliente"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" id="pFecha">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Concepto</label>
+        <select class="form-input" id="pConcepto" onchange="updateMonto()">
+          <option value="Plan Semanal">Plan Semanal</option>
+          <option value="Plan Quincenal">Plan Quincenal</option>
+          <option value="Plan Mensual">Plan Mensual</option>
+          <option value="Kit Cocas">Kit Cocas ($80.000)</option>
+          <option value="Kit Cocas dto">Kit Cocas dto 20% ($64.000)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monto</label>
+        <input type="number" class="form-input" id="pMonto" value="90000">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Metodo de pago</label>
+        <select class="form-input" id="pMetodo">
+          <option value="Nequi">Nequi</option>
+          <option value="Transferencia Bancolombia">Transferencia Bancolombia</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select class="form-input" id="pEstado">
+          <option value="Pagado">Pagado</option>
+          <option value="Pendiente">Pendiente</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closePaymentModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePayment()">Registrar Pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMPRA -->
+<div class="modal-overlay" id="compraModal">
+  <div class="modal">
+    <div class="modal-title" id="compraModalTitle">Registrar Compra</div>
+    <input type="hidden" id="compraIdx" value="-1">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" id="cmpFecha">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monto</label>
+        <input type="number" class="form-input" id="cmpMonto" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Concepto</label>
+        <input type="text" class="form-input" id="cmpConcepto" placeholder="Ej: Carne cerdo 10kg">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="cmpCategoria">
+          <option value="Proteínas">Proteínas</option>
+          <option value="Vegetales">Vegetales</option>
+          <option value="Granos">Granos y harinas</option>
+          <option value="Empaque">Empaque (cocas, bolsas)</option>
+          <option value="Servicios">Servicios (luz, agua, gas)</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Marketing">Marketing y pauta</option>
+          <option value="Personal">Personal (sueldos)</option>
+          <option value="Equipo">Equipo y utensilios</option>
+          <option value="Otros">Otros</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Proveedor</label>
+        <input type="text" class="form-input" id="cmpProveedor" placeholder="Ej: Carnes La Ideal">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Método de pago</label>
+        <select class="form-input" id="cmpMetodo">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Nequi">Nequi</option>
+          <option value="Transferencia Bancolombia">Transferencia Bancolombia</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notas</label>
+      <input type="text" class="form-input" id="cmpNotas" placeholder="Detalle opcional">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeCompraModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCompra()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENTREGAR COCAS -->
+<div class="modal-overlay" id="entregarCocasModal">
+  <div class="modal">
+    <div class="modal-title">Entregar cocas</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cliente</label>
+        <input type="text" class="form-input" id="ecCliente" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" id="ecFecha">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Set que entregas</label>
+        <select class="form-input" id="ecSet">
+          <option value="A">Set A</option>
+          <option value="B">Set B</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas (opcional)</label>
+        <input type="text" class="form-input" id="ecNotas" placeholder="Ej: entregué la bolsa nueva">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeEntregarCocas()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEntregarCocas()">Registrar entrega</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECIBIR DEVOLUCION -->
+<div class="modal-overlay" id="recibirCocasModal">
+  <div class="modal">
+    <div class="modal-title">Recibir devolución</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cliente</label>
+        <input type="text" class="form-input" id="rcCliente" readonly>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" class="form-input" id="rcFecha">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Set que devolvió</label>
+        <select class="form-input" id="rcSet">
+          <option value="A">Set A</option>
+          <option value="B">Set B</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <select class="form-input" id="rcEstado">
+          <option value="Limpia a tiempo">Limpia a tiempo</option>
+          <option value="Limpia tarde">Limpia tarde</option>
+          <option value="Sucia">Sucia</option>
+          <option value="No devolvió">No devolvió</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Notas (opcional)</label>
+        <input type="text" class="form-input" id="rcNotas" placeholder="Ej: faltó un cubierto">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeRecibirCocas()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRecibirCocas()">Registrar devolución</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTORIAL COCAS -->
+<div class="modal-overlay" id="historialCocasModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-title" id="hcTitulo">Historial de cocas</div>
+    <div id="hcContenido" style="max-height:500px; overflow-y:auto;"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeHistorialCocas()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="productoModal">
+  <div class="modal">
+    <div class="modal-title" id="productoModalTitle">Nuevo Producto</div>
+    <input type="hidden" id="productoIdx" value="-1">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" class="form-input" id="prodNombre" placeholder="Ej: Carne de cerdo">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <select class="form-input" id="prodCategoria">
+          <option>Proteínas</option><option>Vegetales</option><option>Granos</option>
+          <option>Lácteos</option><option>Especias</option><option>Empaque</option><option>Otros</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Costo</label>
+        <input type="number" class="form-input" id="prodCosto" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unidad</label>
+        <select class="form-input" id="prodUnidad">
+          <option>kg</option><option>g</option><option>libra</option>
+          <option>unidad</option><option>docena</option><option>litro</option>
+          <option>ml</option><option>paquete</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Proveedor</label>
+      <select class="form-input" id="prodProveedor">
+        <option value="">(sin proveedor fijo)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notas</label>
+      <input type="text" class="form-input" id="prodNotas" placeholder="Ej: preferible pedir antes de las 10am">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeProductoModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProducto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROVEEDOR -->
+<div class="modal-overlay" id="proveedorModal">
+  <div class="modal">
+    <div class="modal-title" id="proveedorModalTitle">Nuevo Proveedor</div>
+    <input type="hidden" id="proveedorIdx" value="-1">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" class="form-input" id="provNombre" placeholder="Ej: Carnes La Ideal">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-input" id="provTipo">
+          <option>Proteínas</option><option>Vegetales / Frutas</option><option>Granos</option>
+          <option>Lácteos</option><option>Empaque</option><option>Servicios</option><option>Mixto</option><option>Otros</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Contacto (persona)</label>
+        <input type="text" class="form-input" id="provContacto" placeholder="Nombre del contacto">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-input" id="provTelefono" placeholder="300 123 4567">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Dirección</label>
+      <input type="text" class="form-input" id="provDireccion" placeholder="Opcional">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notas</label>
+      <input type="text" class="form-input" id="provNotas" placeholder="Ej: entrega los martes y viernes">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeProveedorModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProveedor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div class="modal-overlay" id="usuarioModal">
+  <div class="modal">
+    <div class="modal-title">Nuevo Usuario</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input type="text" class="form-input" id="usrNombre" placeholder="Ej: Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rol</label>
+        <select class="form-input" id="usrRol">
+          <option value="admin">Admin (todo)</option>
+          <option value="chef">Chef (menús, recetas, entregas)</option>
+          <option value="domiciliario">Domiciliario (ruta, cocas)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="usrEmail" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña inicial</label>
+        <input type="text" class="form-input" id="usrPass" placeholder="mínimo 6 caracteres">
+      </div>
+    </div>
+    <div style="background:#FFF0DC; padding:10px; border-radius:8px; font-size:11px; color:#666; margin-bottom:12px;">
+      ⚠️ Comparte el email y contraseña con la persona. Recomiéndale cambiar la contraseña después de entrar.
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeUsuarioModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUsuario()">Crear Usuario</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE MODULE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyASuTY_vLaibbKs5czvL16Eh9t68wjCwEc",
+    authDomain: "encocados-crm.firebaseapp.com",
+    projectId: "encocados-crm",
+    storageBucket: "encocados-crm.firebasestorage.app",
+    messagingSenderId: "813093136155",
+    appId: "1:813093136155:web:7d8fa0e262bdf5b4cb95be"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window._fb = {
+    auth, db,
+    doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc,
+    signIn: (email, pass) => signInWithEmailAndPassword(auth, email, pass),
+    signOut: () => signOut(auth),
+    createUser: (email, pass) => createUserWithEmailAndPassword(auth, email, pass),
+    onAuth: (cb) => onAuthStateChanged(auth, cb)
+  };
+
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<script>
+  // ===== DATA (arrays en memoria; espejo de Firestore) =====
+  let clients = [];
+  let payments = [];
+  let deliveries = {};
+  let menus = [];
+  let recetas = [];
+  let cocasLog = [];
+  let compras = [];
+  let proveedores = [];
+  let productos = [];
+  let usuariosLocales = [];
+
+  // currentUser se define al hacer login
+  window.currentUser = null;
+
+  // ===== FIREBASE BOOTSTRAP =====
+  let fbReady = false;
+  let dataSyncInit = false;
+
+  window.addEventListener('firebase-ready', () => {
+    fbReady = true;
+    window._fb.onAuth(async (user) => {
+      if (!user) {
+        // No logueado
+        document.body.classList.add('not-logged-in');
+        document.getElementById('userBadge').style.display = 'none';
+        return;
+      }
+      // Cargar rol del usuario
+      try {
+        const userDoc = await window._fb.getDoc(window._fb.doc(window._fb.db, 'users', user.uid));
+        const data = userDoc.exists() ? userDoc.data() : null;
+        if (!data || !data.role) {
+          alert('Tu usuario no tiene un rol asignado. Contacta al administrador.');
+          await window._fb.signOut();
+          return;
+        }
+        window.currentUser = { uid: user.uid, email: user.email, role: data.role, nombre: data.nombre || user.email };
+
+        // Mostrar badge
+        document.getElementById('userName').textContent = window.currentUser.nombre;
+        document.getElementById('userRole').textContent = window.currentUser.role;
+        document.getElementById('userBadge').style.display = 'block';
+
+        // Ocultar login, mostrar app
+        document.body.classList.remove('not-logged-in');
+
+        // Aplicar restricciones de rol
+        aplicarRestriccionesRol();
+
+        // Iniciar sincronización
+        if (!dataSyncInit) {
+          initFirestoreSync();
+          dataSyncInit = true;
+        }
+      } catch (e) {
+        console.error('Error cargando usuario:', e);
+        alert('Error cargando perfil: ' + e.message);
+      }
+    });
+  });
+
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    const errEl = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+    const loadEl = document.getElementById('loginLoading');
+
+    errEl.textContent = '';
+    if (!email || !pass) { errEl.textContent = 'Ingresa email y contraseña'; return; }
+
+    btn.disabled = true;
+    loadEl.style.display = 'block';
+
+    try {
+      await window._fb.signIn(email, pass);
+    } catch (e) {
+      const msg = e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found'
+        ? 'Email o contraseña incorrectos'
+        : e.code === 'auth/too-many-requests'
+          ? 'Demasiados intentos. Espera unos minutos.'
+          : 'Error: ' + e.message;
+      errEl.textContent = msg;
+    } finally {
+      btn.disabled = false;
+      loadEl.style.display = 'none';
+    }
+  }
+
+  async function doLogout() {
+    if (!confirm('¿Cerrar sesión?')) return;
+    await window._fb.signOut();
+    location.reload();
+  }
+
+  function showSync(type, text) {
+    const b = document.getElementById('syncBadge');
+    b.className = 'sync-badge show ' + type;
+    b.textContent = text;
+    if (type === 'syncing') {
+      clearTimeout(window._syncTimeout);
+      window._syncTimeout = setTimeout(() => b.classList.remove('show'), 1500);
+    }
+  }
+
+  function initFirestoreSync() {
+    const mainRef = window._fb.doc(window._fb.db, 'crm', 'main');
+    window._fb.onSnapshot(mainRef, (snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        clients = d.clients || [];
+        payments = d.payments || [];
+        deliveries = d.deliveries || {};
+        menus = d.menus || [];
+        recetas = d.recetas || [];
+        cocasLog = d.cocasLog || [];
+        compras = d.compras || [];
+        proveedores = d.proveedores || [];
+        productos = d.productos || [];
+      } else {
+        clients = []; payments = []; deliveries = {}; menus = []; recetas = []; cocasLog = []; compras = []; proveedores = []; productos = [];
+      }
+      if (typeof renderAll === 'function') renderAll();
+    }, (err) => {
+      console.error('Error sync:', err);
+      showSync('error', 'Error de sincronización');
+    });
+  }
+
+  function aplicarRestriccionesRol() {
+    const role = window.currentUser.role;
+    if (role === 'admin') return; // ve todo
+
+    const permisos = {
+      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores'],
+      domiciliario: ['dashboard', 'ruta', 'cocas', 'entregas']
+    };
+    const permitidas = permisos[role] || ['dashboard'];
+    document.querySelectorAll('.nav-item').forEach(item => {
+      const onclick = item.getAttribute('onclick') || '';
+      const m = onclick.match(/showPage\('([^']+)'\)/);
+      if (m) {
+        const page = m[1];
+        if (!permitidas.includes(page)) item.style.display = 'none';
+      }
+    });
+  }
+
+  window.doLogin = doLogin;
+  window.doLogout = doLogout;
+  window.showSync = showSync;
+
+  const PRECIOS = { 'Semanal': 90000, 'Quincenal': 170000, 'Mensual': 320000 };
+  const DIAS_PLAN = { 'Semanal': 5, 'Quincenal': 10, 'Mensual': 20 };
+
+  const MENU = [
+    { dia: 'lunes', label: 'Lunes 20', plato: 'Lomo de cerdo en julianas', nivel: 'Simple', sopa: 'Sopa de guineo', ensalada: 'Dulce Tropical', bebida: 'Guandolo' },
+    { dia: 'martes', label: 'Martes 21', plato: 'Ceviche chicharron y chorizo', nivel: 'Intermedio', sopa: 'Crema tomate albahaca', ensalada: 'Mexicana', bebida: 'Frutos rojos' },
+    { dia: 'miercoles', label: 'Miercoles 22', plato: 'Pasta salsa blanca, pollo y tocineta', nivel: 'Intermedio', sopa: 'Crema de ahuyama', ensalada: 'Fresca Tropical', bebida: 'Guandolo' },
+    { dia: 'jueves', label: 'Jueves 23', plato: 'Lasagna de carne + Croissant', nivel: 'Premium', sopa: 'Croissant x2', ensalada: 'Del Chef', bebida: 'Frutos amarillos' },
+    { dia: 'viernes', label: 'Viernes 24', plato: 'Costilla glaseada BBQ y panela', nivel: 'Premium', sopa: 'Sopa verduras', ensalada: 'Clasica Fresca', bebida: 'Limonada cereza' }
+  ];
+
+  async function save() {
+    if (!window._fb || !window.currentUser) {
+      console.warn('No hay sesión activa, no se puede guardar.');
+      return;
+    }
+    try {
+      showSync('syncing', 'Guardando...');
+      await window._fb.setDoc(
+        window._fb.doc(window._fb.db, 'crm', 'main'),
+        {
+          clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos,
+          updatedAt: new Date().toISOString(),
+          updatedBy: window.currentUser.email
+        }
+      );
+    } catch (e) {
+      console.error('Error guardando:', e);
+      showSync('error', 'Error al guardar');
+      alert('No se pudo guardar en la nube. Revisa tu conexión.');
+    }
+  }
+
+  // ===== IMPORTAR DESDE LOCALSTORAGE =====
+  function detectarDatosLocales() {
+    const lsClients = JSON.parse(localStorage.getItem('encocados_clients') || '[]');
+    const lsPayments = JSON.parse(localStorage.getItem('encocados_payments') || '[]');
+    const lsMenus = JSON.parse(localStorage.getItem('encocados_menus') || '[]');
+    const lsRecetas = JSON.parse(localStorage.getItem('encocados_recetas') || '[]');
+    const lsCocasLog = JSON.parse(localStorage.getItem('encocados_cocas_log') || '[]');
+
+    const tieneData = lsClients.length + lsPayments.length + lsMenus.length + lsRecetas.length + lsCocasLog.length > 0;
+    const nubeTieneData = clients.length + payments.length + menus.length + recetas.length > 0;
+    const yaDescartado = localStorage.getItem('encocados_import_descartado') === '1';
+
+    if (tieneData && !nubeTieneData && !yaDescartado && window.currentUser && window.currentUser.role === 'admin') {
+      document.getElementById('importBox').style.display = 'block';
+      document.getElementById('importPreview').innerHTML =
+        lsClients.length + ' clientes · ' +
+        lsPayments.length + ' pagos · ' +
+        lsMenus.length + ' menús · ' +
+        lsRecetas.length + ' recetas · ' +
+        lsCocasLog.length + ' registros cocas';
+    } else {
+      document.getElementById('importBox').style.display = 'none';
+    }
+  }
+
+  async function importarDesdeLocalStorage() {
+    if (!confirm('¿Subir los datos locales a la nube? Esto los hará disponibles para todo el equipo.')) return;
+    const lsClients = JSON.parse(localStorage.getItem('encocados_clients') || '[]');
+    const lsPayments = JSON.parse(localStorage.getItem('encocados_payments') || '[]');
+    const lsDeliveries = JSON.parse(localStorage.getItem('encocados_deliveries') || '{}');
+    const lsMenus = JSON.parse(localStorage.getItem('encocados_menus') || '[]');
+    const lsRecetas = JSON.parse(localStorage.getItem('encocados_recetas') || '[]');
+    const lsCocasLog = JSON.parse(localStorage.getItem('encocados_cocas_log') || '[]');
+
+    clients = lsClients;
+    payments = lsPayments;
+    deliveries = lsDeliveries;
+    menus = lsMenus;
+    recetas = lsRecetas;
+    cocasLog = lsCocasLog;
+
+    await save();
+    localStorage.setItem('encocados_import_descartado', '1');
+    alert('✓ Datos subidos a la nube correctamente.');
+    document.getElementById('importBox').style.display = 'none';
+    renderAll();
+  }
+
+  function descartarImport() {
+    if (!confirm('¿Descartar los datos locales? No se subirán a la nube.')) return;
+    localStorage.setItem('encocados_import_descartado', '1');
+    document.getElementById('importBox').style.display = 'none';
+  }
+
+  // ===== NAVIGATION =====
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    event.currentTarget.classList.add('active');
+    renderAll();
+  }
+
+  // ===== RENDER =====
+  function renderAll() {
+    renderClients();
+    renderDashboard();
+    renderEntregas();
+    renderPagos();
+    renderFinanciero();
+    renderCocas();
+    renderAlmanaque();
+    if (typeof renderProductos === 'function') renderProductos();
+    if (typeof renderProveedores === 'function') renderProveedores();
+    if (typeof renderRuta === 'function') renderRuta();
+    if (typeof renderUsuarios === 'function') renderUsuarios();
+    document.getElementById('clientCount').textContent = clients.filter(c => c.estado !== 'Retirado').length;
+    detectarDatosLocales();
+  }
+
+  function renderClients(filter = 'todos', search = '') {
+    const body = document.getElementById('clientesBody');
+    const empty = document.getElementById('emptyClients');
+    let filtered = clients;
+
+    if (filter !== 'todos') filtered = filtered.filter(c => c.plan === filter);
+    if (search) filtered = filtered.filter(c => c.nombre.toLowerCase().includes(search.toLowerCase()));
+
+    if (filtered.length === 0) {
+      body.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    body.innerHTML = filtered.map((c, i) => {
+      const planClass = c.plan === 'Semanal' ? 'plan-semanal' : c.plan === 'Quincenal' ? 'plan-quincenal' : 'plan-mensual';
+      const statusClass = c.estado === 'Activo' ? 'status-activo' : c.estado === 'Por confirmar' ? 'status-pendiente' : 'status-retirado';
+      const delivClass = c.entrega === 'Domicilio dia' ? 'delivery-dia' : 'delivery-noche';
+      const idx = clients.indexOf(c);
+      const vence = c.inicio ? calcVence(c.inicio, c.plan) : '—';
+      const schedule = getClientSchedule(idx);
+      const totalAlm = DIAS_PLAN[c.plan] || 5;
+      const entregados = schedule.filter(d => {
+        const key = d.replace(/-/g, '');
+        return deliveries[d] && deliveries[d][c.nombre];
+      }).length;
+      const restantes = totalAlm - entregados;
+
+      return '<tr>' +
+        '<td><strong>' + c.nombre + '</strong><br><span style="font-size:11px;color:var(--gris);">' + (function(){ const dirs = getDireccionesCliente(c); const p = dirs[0]; const extras = dirs.length > 1 ? ' <span style="color:#E5461A; font-weight:700;">+' + (dirs.length-1) + '</span>' : ''; return (p.direccion || '') + (p.referencia ? ' — ' + p.referencia : '') + extras; })() + '</span></td>' +
+        '<td>' + (c.telefono || '') + '</td>' +
+        '<td><span class="plan-badge ' + planClass + '">' + c.plan + '</span><br><span style="font-size:10px;color:#999;">' + schedule.length + ' dias prog.</span></td>' +
+        '<td><span class="delivery-type ' + delivClass + '">' + c.entrega + '</span></td>' +
+        '<td>' + (c.kit === 'Entregado' ? '<span style="color:var(--verde);">✓</span>' : '<span style="color:#FFA000;">Pend.</span>') + '</td>' +
+        '<td><span class="status ' + statusClass + '">' + c.estado + '</span></td>' +
+        '<td style="font-size:12px;">' + vence + '<br><span style="font-size:10px;color:' + (restantes <= 2 ? 'var(--rojo)' : '#999') + ';">' + restantes + ' restantes</span></td>' +
+        '<td class="nota-cell" style="font-size:11px;color:#666;max-width:180px;" data-nota="' + (c.notas || '').replace(/"/g, '&quot;') + '">' + (c.notas ? (c.notas.length > 30 ? '<span class="nota-short" onclick="toggleNota(this.parentElement)">' + c.notas.substring(0,30) + '… <b class="nota-link">ver mas</b></span><span class="nota-full" style="display:none" onclick="toggleNota(this.parentElement)">' + c.notas + ' <b class="nota-link">ver menos</b></span>' : c.notas) : '<span style="color:#ddd;">—</span>') + '</td>' +
+        '<td><button class="btn btn-secondary btn-small" onclick="editClient(' + idx + ')">Editar</button> ' +
+        '<button class="btn btn-secondary btn-small" style="color:#FF9800;border-color:#FFB74D;" onclick="openCancelModal(' + idx + ')">Cancelar dia</button> ' +
+        '<button class="btn btn-danger btn-small" onclick="deleteClient(' + idx + ')">X</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function renderDashboard() {
+    const activos = clients.filter(c => c.estado === 'Activo' || c.estado === 'Por confirmar');
+    const sem = activos.filter(c => c.plan === 'Semanal').length;
+    const quin = activos.filter(c => c.plan === 'Quincenal').length;
+    const men = activos.filter(c => c.plan === 'Mensual').length;
+
+    document.getElementById('dash-clientes').textContent = activos.length;
+    document.getElementById('dash-planes').textContent = sem + ' sem · ' + quin + ' quin · ' + men + ' men';
+
+    const totalIngresos = payments.filter(p => p.estado === 'Pagado').reduce((s, p) => s + p.monto, 0);
+    document.getElementById('dash-ingresos').textContent = '$' + totalIngresos.toLocaleString();
+
+    document.getElementById('dash-eco').textContent = activos.length * 5 * 4;
+
+    // Menu
+    let menuHtml = '';
+    MENU.forEach(m => {
+      const nivelClass = m.nivel === 'Simple' ? 'nivel-simple' : m.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+      menuHtml += '<div style="padding:8px 0; border-bottom:1px solid var(--borde); display:flex; align-items:center; justify-content:space-between;">' +
+        '<div><strong style="font-size:12px;">' + m.label + '</strong><br><span style="font-size:11px;color:var(--gris);">' + m.plato + '</span></div>' +
+        '<span class="nivel-badge ' + nivelClass + '">' + m.nivel + '</span></div>';
+    });
+    document.getElementById('dash-menu').innerHTML = menuHtml;
+
+    // Ultimos pagos
+    const ultPagos = payments.slice(-5).reverse();
+    let pagosHtml = '';
+    ultPagos.forEach(p => {
+      pagosHtml += '<div style="padding:8px 0; border-bottom:1px solid var(--borde); display:flex; align-items:center; justify-content:space-between;">' +
+        '<div><strong style="font-size:12px;">' + p.cliente + '</strong><br><span style="font-size:11px;color:var(--gris);">' + p.concepto + '</span></div>' +
+        '<span style="font-size:13px; font-weight:700; color:' + (p.estado === 'Pagado' ? 'var(--verde)' : '#FFA000') + ';">$' + p.monto.toLocaleString() + '</span></div>';
+    });
+    document.getElementById('dash-pagos').innerHTML = pagosHtml || '<p style="color:var(--gris); font-size:12px; text-align:center; padding:20px;">Sin pagos</p>';
+  }
+
+  function renderEntregas() {
+    const diaSelect = document.getElementById('entregaDia').value;
+    const menuDia = MENU.find(m => m.dia === diaSelect);
+    const activos = clients.filter(c => c.estado === 'Activo' || c.estado === 'Por confirmar');
+
+    const nivelClass = menuDia.nivel === 'Simple' ? 'nivel-simple' : menuDia.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+
+    const delivKey = diaSelect;
+    if (!deliveries[delivKey]) deliveries[delivKey] = {};
+
+    // Separate by delivery type
+    const domDia = activos.filter(c => c.entrega === 'Domicilio dia');
+    const nocturna = activos.filter(c => c.entrega === 'Entrega nocturna');
+
+    let html = '<div class="entrega-day"><div class="entrega-day-header" style="background:var(--card);">' +
+      '<h3>' + menuDia.label + ' <span class="nivel-badge ' + nivelClass + '">' + menuDia.nivel + '</span></h3>' +
+      '<div style="font-size:11px; color:var(--gris);">' + menuDia.plato + ' | ' + menuDia.sopa + ' | ' + menuDia.ensalada + ' | ' + menuDia.bebida + '</div></div>';
+
+    // Domicilio dia
+    html += '<div class="entrega-day-body">';
+    html += '<div style="font-size:11px; font-weight:700; color:var(--azul); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">☀️ Domicilio dia — Mediodia</div>';
+
+    if (domDia.length === 0) {
+      html += '<div style="padding:12px; color:var(--gris); font-size:12px;">Sin clientes de domicilio dia</div>';
+    } else {
+      domDia.forEach(c => {
+        const checked = deliveries[delivKey][c.nombre] || false;
+        html += '<div class="entrega-item">' +
+          '<div class="entrega-check ' + (checked ? 'checked' : '') + '" onclick="toggleDelivery(\'' + delivKey + '\',\'' + c.nombre + '\')">' + (checked ? '✓' : '') + '</div>' +
+          '<span class="entrega-name">' + c.nombre + '</span>' +
+          '<span class="entrega-meta">' + (c.barrio || '') + '</span>' +
+          '<span class="delivery-type delivery-dia">Mediodia</span></div>';
+      });
+    }
+
+    // Nocturna
+    html += '<div style="font-size:11px; font-weight:700; color:var(--morado); margin:16px 0 8px; text-transform:uppercase; letter-spacing:1px;">🌙 Entrega nocturna — Dia anterior</div>';
+
+    if (nocturna.length === 0) {
+      html += '<div style="padding:12px; color:var(--gris); font-size:12px;">Sin clientes nocturnos</div>';
+    } else {
+      nocturna.forEach(c => {
+        const checked = deliveries[delivKey][c.nombre] || false;
+        html += '<div class="entrega-item">' +
+          '<div class="entrega-check ' + (checked ? 'checked' : '') + '" onclick="toggleDelivery(\'' + delivKey + '\',\'' + c.nombre + '\')">' + (checked ? '✓' : '') + '</div>' +
+          '<span class="entrega-name">' + c.nombre + '</span>' +
+          '<span class="entrega-meta">' + (c.barrio || '') + '</span>' +
+          '<span class="delivery-type delivery-noche">Noche anterior</span></div>';
+      });
+    }
+
+    html += '</div></div>';
+    document.getElementById('entregasContent').innerHTML = html;
+
+    // Update dashboard
+    const total = activos.length;
+    const done = Object.values(deliveries[delivKey] || {}).filter(v => v).length;
+    document.getElementById('dash-entregas').textContent = done + '/' + total;
+  }
+
+  function renderPagos() {
+    const body = document.getElementById('pagosBody');
+    const empty = document.getElementById('emptyPagos');
+
+    if (payments.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    body.innerHTML = payments.map(p => {
+      const rowClass = p.estado === 'Pagado' ? 'pago-pagado' : 'pago-pendiente';
+      return '<tr class="' + rowClass + '">' +
+        '<td>' + p.fecha + '</td>' +
+        '<td><strong>' + p.cliente + '</strong></td>' +
+        '<td>' + p.concepto + '</td>' +
+        '<td style="font-weight:700;">$' + p.monto.toLocaleString() + '</td>' +
+        '<td>' + p.metodo + '</td>' +
+        '<td><span class="status ' + (p.estado === 'Pagado' ? 'status-activo' : 'status-pendiente') + '">' + p.estado + '</span></td></tr>';
+    }).reverse().join('');
+
+    const totalPagado = payments.filter(p => p.estado === 'Pagado').reduce((s, p) => s + p.monto, 0);
+    const totalPendiente = payments.filter(p => p.estado === 'Pendiente').reduce((s, p) => s + p.monto, 0);
+    const totalKits = payments.filter(p => p.concepto.includes('Kit')).reduce((s, p) => s + p.monto, 0);
+
+    document.getElementById('pago-total').textContent = '$' + totalPagado.toLocaleString();
+    document.getElementById('pago-pendiente').textContent = '$' + totalPendiente.toLocaleString();
+    document.getElementById('pago-kits').textContent = '$' + totalKits.toLocaleString();
+  }
+
+  // ===== FINANCIERO =====
+  let filtroCompraCategoria = 'todas';
+
+  function filterCompras(cat, btn) {
+    filtroCompraCategoria = cat;
+    document.querySelectorAll('#page-financiero .filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderFinanciero();
+  }
+
+  function renderFinanciero() {
+    const body = document.getElementById('comprasBody');
+    const empty = document.getElementById('emptyCompras');
+    const mesActual = new Date().toISOString().slice(0,7);
+
+    const comprasFiltradas = filtroCompraCategoria === 'todas'
+      ? compras
+      : compras.filter(c => c.categoria === filtroCompraCategoria);
+
+    if (comprasFiltradas.length === 0) {
+      body.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      body.innerHTML = comprasFiltradas
+        .map((c, origIdx) => ({ c, origIdx: compras.indexOf(c) }))
+        .sort((a, b) => b.c.fecha.localeCompare(a.c.fecha))
+        .map(({ c, origIdx }) => {
+          return '<tr>' +
+            '<td>' + c.fecha + '</td>' +
+            '<td><strong>' + (c.concepto || '') + '</strong></td>' +
+            '<td><span class="status" style="background:#FFF0DC; color:#E5461A;">' + (c.categoria || '—') + '</span></td>' +
+            '<td>' + (c.proveedor || '—') + '</td>' +
+            '<td style="font-weight:700; color:#C73A14;">-$' + (c.monto || 0).toLocaleString() + '</td>' +
+            '<td style="font-size:11px;">' + (c.metodo || '') + '</td>' +
+            '<td style="font-size:11px; color:#666;">' + (c.notas || '') + '</td>' +
+            '<td style="white-space:nowrap;">' +
+              '<button class="btn btn-small btn-secondary" onclick="editCompra(' + origIdx + ')">✎</button> ' +
+              '<button class="btn btn-small btn-secondary" onclick="deleteCompra(' + origIdx + ')">×</button>' +
+            '</td></tr>';
+        }).join('');
+    }
+
+    // Stats
+    const ingresosMes = payments
+      .filter(p => p.estado === 'Pagado' && p.fecha.startsWith(mesActual))
+      .reduce((s, p) => s + p.monto, 0);
+    const egresosMes = compras
+      .filter(c => c.fecha.startsWith(mesActual))
+      .reduce((s, c) => s + (c.monto || 0), 0);
+    const balance = ingresosMes - egresosMes;
+
+    document.getElementById('fin-ingresos').textContent = '$' + ingresosMes.toLocaleString();
+    document.getElementById('fin-egresos').textContent = '$' + egresosMes.toLocaleString();
+    const balanceEl = document.getElementById('fin-balance');
+    balanceEl.textContent = (balance >= 0 ? '$' : '-$') + Math.abs(balance).toLocaleString();
+    balanceEl.style.color = balance >= 0 ? '#4a7c5e' : '#C73A14';
+    document.getElementById('fin-count').textContent = compras.length;
+  }
+
+  function openCompraModal() {
+    document.getElementById('compraModalTitle').textContent = 'Registrar Compra';
+    document.getElementById('compraIdx').value = -1;
+    document.getElementById('cmpFecha').value = new Date().toISOString().slice(0,10);
+    document.getElementById('cmpMonto').value = '';
+    document.getElementById('cmpConcepto').value = '';
+    document.getElementById('cmpCategoria').value = 'Proteínas';
+    document.getElementById('cmpProveedor').value = '';
+    document.getElementById('cmpMetodo').value = 'Efectivo';
+    document.getElementById('cmpNotas').value = '';
+    document.getElementById('compraModal').classList.add('show');
+  }
+
+  function editCompra(idx) {
+    const c = compras[idx];
+    if (!c) return;
+    document.getElementById('compraModalTitle').textContent = 'Editar Compra';
+    document.getElementById('compraIdx').value = idx;
+    document.getElementById('cmpFecha').value = c.fecha || '';
+    document.getElementById('cmpMonto').value = c.monto || '';
+    document.getElementById('cmpConcepto').value = c.concepto || '';
+    document.getElementById('cmpCategoria').value = c.categoria || 'Proteínas';
+    document.getElementById('cmpProveedor').value = c.proveedor || '';
+    document.getElementById('cmpMetodo').value = c.metodo || 'Efectivo';
+    document.getElementById('cmpNotas').value = c.notas || '';
+    document.getElementById('compraModal').classList.add('show');
+  }
+
+  function closeCompraModal() {
+    document.getElementById('compraModal').classList.remove('show');
+  }
+
+  function saveCompra() {
+    const fecha = document.getElementById('cmpFecha').value;
+    const monto = parseFloat(document.getElementById('cmpMonto').value) || 0;
+    const concepto = document.getElementById('cmpConcepto').value.trim();
+
+    if (!fecha) { alert('La fecha es obligatoria'); return; }
+    if (!concepto) { alert('El concepto es obligatorio'); return; }
+    if (monto <= 0) { alert('El monto debe ser mayor a 0'); return; }
+
+    const compra = {
+      fecha,
+      monto,
+      concepto,
+      categoria: document.getElementById('cmpCategoria').value,
+      proveedor: document.getElementById('cmpProveedor').value.trim(),
+      metodo: document.getElementById('cmpMetodo').value,
+      notas: document.getElementById('cmpNotas').value.trim(),
+      registradoPor: window.currentUser ? window.currentUser.email : ''
+    };
+
+    const idx = parseInt(document.getElementById('compraIdx').value);
+    if (idx >= 0) {
+      compras[idx] = { ...compras[idx], ...compra };
+    } else {
+      compras.push(compra);
+    }
+
+    save();
+    closeCompraModal();
+    renderFinanciero();
+  }
+
+  function deleteCompra(idx) {
+    if (!confirm('¿Eliminar esta compra?')) return;
+    compras.splice(idx, 1);
+    save();
+    renderFinanciero();
+  }
+
+  function renderCocas() {
+    const body = document.getElementById('cocasBody');
+    const activos = clients.filter(c => c.estado !== 'Retirado');
+    const hoy = new Date().toISOString().slice(0,10);
+    const mesActual = hoy.slice(0,7);
+
+    let pendientesHoy = 0;
+    let okMes = 0;
+    let clientesConRetrasos = 0;
+
+    body.innerHTML = activos.map(c => {
+      const logCliente = cocasLog.filter(l => l.cliente === c.nombre);
+      const ultimaEntrega = logCliente.filter(l => l.accion === 'Entrega').sort((a,b) => b.fecha.localeCompare(a.fecha))[0];
+      const ultimaDevolucion = logCliente.filter(l => l.accion === 'Devolucion').sort((a,b) => b.fecha.localeCompare(a.fecha))[0];
+
+      const setActual = c.setActual || (ultimaEntrega ? ultimaEntrega.set : '—');
+      const fechaUltima = ultimaEntrega ? ultimaEntrega.fecha : '—';
+
+      const okCount = logCliente.filter(l => l.accion === 'Devolucion' && l.estado === 'Limpia a tiempo').length;
+      const retrasoCount = logCliente.filter(l => l.accion === 'Devolucion' && l.estado !== 'Limpia a tiempo').length;
+
+      okMes += logCliente.filter(l => l.accion === 'Devolucion' && l.estado === 'Limpia a tiempo' && l.fecha.startsWith(mesActual)).length;
+      if (retrasoCount > 0) clientesConRetrasos++;
+
+      // Pendiente hoy: tiene set entregado hoy sin devolución del set anterior
+      if (ultimaEntrega && ultimaEntrega.fecha === hoy) {
+        const setAnterior = ultimaEntrega.set === 'A' ? 'B' : 'A';
+        const devolvioHoy = logCliente.some(l => l.accion === 'Devolucion' && l.fecha === hoy && l.set === setAnterior);
+        if (!devolvioHoy && logCliente.filter(l => l.accion === 'Entrega').length > 1) pendientesHoy++;
+      }
+
+      const setBadge = setActual === 'A' ? '<span style="background:#F5CA85; color:#000; padding:3px 8px; border-radius:4px; font-weight:600; font-size:11px;">Set A</span>'
+        : setActual === 'B' ? '<span style="background:#BCC2DC; color:#000; padding:3px 8px; border-radius:4px; font-weight:600; font-size:11px;">Set B</span>'
+        : '<span style="color:#999; font-size:11px;">—</span>';
+
+      return '<tr>' +
+        '<td><strong style="cursor:pointer; color:#E5461A;" onclick="openHistorialCocas(\'' + c.nombre.replace(/'/g, "\\'") + '\')">' + c.nombre + '</strong></td>' +
+        '<td>' + setBadge + '</td>' +
+        '<td style="font-size:11px; color:#666;">' + fechaUltima + '</td>' +
+        '<td><strong style="color:#4a7c5e;">' + okCount + '</strong></td>' +
+        '<td>' + (retrasoCount > 0 ? '<strong style="color:#E5461A;">' + retrasoCount + '</strong>' : '0') + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="btn btn-small btn-primary" onclick="openEntregarCocas(\'' + c.nombre.replace(/'/g, "\\'") + '\')">Entregar</button> ' +
+          '<button class="btn btn-small btn-secondary" onclick="openRecibirCocas(\'' + c.nombre.replace(/'/g, "\\'") + '\')">Recibir</button>' +
+        '</td></tr>';
+    }).join('');
+
+    document.getElementById('coca-pendientes-hoy').textContent = pendientesHoy;
+    document.getElementById('coca-ok-mes').textContent = okMes;
+    document.getElementById('coca-retrasos').textContent = clientesConRetrasos;
+  }
+
+  // ===== COCAS: Entregar =====
+  function openEntregarCocas(nombreCliente) {
+    document.getElementById('ecCliente').value = nombreCliente;
+    document.getElementById('ecFecha').value = new Date().toISOString().slice(0,10);
+    // Sugerir set contrario al actual
+    const c = clients.find(cl => cl.nombre === nombreCliente);
+    const setSugerido = c && c.setActual === 'A' ? 'B' : 'A';
+    document.getElementById('ecSet').value = setSugerido;
+    document.getElementById('ecNotas').value = '';
+    document.getElementById('entregarCocasModal').classList.add('show');
+  }
+
+  function closeEntregarCocas() {
+    document.getElementById('entregarCocasModal').classList.remove('show');
+  }
+
+  function saveEntregarCocas() {
+    const nombre = document.getElementById('ecCliente').value;
+    const fecha = document.getElementById('ecFecha').value;
+    const set = document.getElementById('ecSet').value;
+    const notas = document.getElementById('ecNotas').value;
+
+    if (!fecha) { alert('Falta la fecha'); return; }
+
+    cocasLog.push({ fecha, cliente: nombre, accion: 'Entrega', set, estado: '', notas });
+
+    const idx = clients.findIndex(c => c.nombre === nombre);
+    if (idx >= 0) clients[idx].setActual = set;
+
+    save();
+    closeEntregarCocas();
+    renderCocas();
+  }
+
+  // ===== COCAS: Recibir devolucion =====
+  function openRecibirCocas(nombreCliente) {
+    document.getElementById('rcCliente').value = nombreCliente;
+    document.getElementById('rcFecha').value = new Date().toISOString().slice(0,10);
+    const c = clients.find(cl => cl.nombre === nombreCliente);
+    const setSugerido = c && c.setActual === 'A' ? 'B' : 'A';
+    document.getElementById('rcSet').value = setSugerido;
+    document.getElementById('rcEstado').value = 'Limpia a tiempo';
+    document.getElementById('rcNotas').value = '';
+    document.getElementById('recibirCocasModal').classList.add('show');
+  }
+
+  function closeRecibirCocas() {
+    document.getElementById('recibirCocasModal').classList.remove('show');
+  }
+
+  function saveRecibirCocas() {
+    const nombre = document.getElementById('rcCliente').value;
+    const fecha = document.getElementById('rcFecha').value;
+    const set = document.getElementById('rcSet').value;
+    const estado = document.getElementById('rcEstado').value;
+    const notas = document.getElementById('rcNotas').value;
+
+    if (!fecha) { alert('Falta la fecha'); return; }
+
+    cocasLog.push({ fecha, cliente: nombre, accion: 'Devolucion', set, estado, notas });
+
+    save();
+    closeRecibirCocas();
+    renderCocas();
+  }
+
+  // ===== COCAS: Historial =====
+  function openHistorialCocas(nombreCliente) {
+    document.getElementById('hcTitulo').textContent = 'Historial — ' + nombreCliente;
+    const logCliente = cocasLog.filter(l => l.cliente === nombreCliente)
+      .sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+    if (logCliente.length === 0) {
+      document.getElementById('hcContenido').innerHTML = '<div style="text-align:center; padding:30px; color:#999;">Sin registros todavía</div>';
+    } else {
+      const rows = logCliente.map(l => {
+        const accionColor = l.accion === 'Entrega' ? '#E5461A' : '#4a7c5e';
+        const estadoColor = l.estado === 'Limpia a tiempo' ? '#4a7c5e'
+          : l.estado === 'Limpia tarde' ? '#d4a84a'
+          : l.estado === 'Sucia' ? '#c17a3a'
+          : l.estado === 'No devolvió' ? '#E5461A' : '#999';
+        return '<tr>' +
+          '<td style="padding:8px; border-bottom:1px solid #f0f0f0; font-size:12px;">' + l.fecha + '</td>' +
+          '<td style="padding:8px; border-bottom:1px solid #f0f0f0; font-size:12px;"><strong style="color:' + accionColor + '">' + l.accion + '</strong></td>' +
+          '<td style="padding:8px; border-bottom:1px solid #f0f0f0; font-size:12px;">Set ' + l.set + '</td>' +
+          '<td style="padding:8px; border-bottom:1px solid #f0f0f0; font-size:12px; color:' + estadoColor + '">' + (l.estado || '—') + '</td>' +
+          '<td style="padding:8px; border-bottom:1px solid #f0f0f0; font-size:11px; color:#666;">' + (l.notas || '') + '</td>' +
+          '<td style="padding:8px; border-bottom:1px solid #f0f0f0;"><button class="btn btn-small btn-secondary" onclick="eliminarRegistroCocas(' + cocasLog.indexOf(l) + ')">×</button></td>' +
+        '</tr>';
+      }).join('');
+      document.getElementById('hcContenido').innerHTML =
+        '<table style="width:100%; border-collapse:collapse;">' +
+        '<thead><tr style="background:#FFF0DC;"><th style="padding:8px; text-align:left; font-size:11px;">Fecha</th><th style="padding:8px; text-align:left; font-size:11px;">Acción</th><th style="padding:8px; text-align:left; font-size:11px;">Set</th><th style="padding:8px; text-align:left; font-size:11px;">Estado</th><th style="padding:8px; text-align:left; font-size:11px;">Notas</th><th></th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>';
+    }
+    document.getElementById('historialCocasModal').classList.add('show');
+  }
+
+  function closeHistorialCocas() {
+    document.getElementById('historialCocasModal').classList.remove('show');
+  }
+
+  function eliminarRegistroCocas(idx) {
+    if (!confirm('¿Eliminar este registro?')) return;
+    const nombre = cocasLog[idx].cliente;
+    cocasLog.splice(idx, 1);
+    save();
+    renderCocas();
+    openHistorialCocas(nombre);
+  }
+
+  // ===== ACTIONS =====
+  // ===== CALENDAR PICKER =====
+  let calSelectedDays = [];
+  let calViewMonth = 3; // april = 3 (0-indexed)
+  let calViewYear = 2026;
+
+  function renderCalendar() {
+    const grid = document.getElementById('calGrid');
+    if (!grid) return;
+    const plan = document.getElementById('fPlan').value;
+    const maxDays = DIAS_PLAN[plan] || 5;
+    document.getElementById('calMax').textContent = maxDays;
+    document.getElementById('calCount').textContent = calSelectedDays.length;
+
+    const year = calViewYear;
+    const month = calViewMonth;
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    document.getElementById('calMonthLabel').textContent = monthNames[month] + ' ' + year;
+
+    let html = '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">LUN</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">MAR</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">MIE</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">JUE</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">VIE</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">SAB</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-align:center;padding:4px;color:#999;">DOM</div>';
+
+    let dow = firstDay.getDay();
+    dow = dow === 0 ? 6 : dow - 1; // Monday = 0
+    for (let i = 0; i < dow; i++) html += '<div></div>';
+
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const date = new Date(year, month, d);
+      const iso = date.toISOString().split('T')[0];
+      const habil = esDiaHabil(date);
+      const selected = calSelectedDays.includes(iso);
+
+      if (!habil) {
+        const isFestivo = FESTIVOS.includes(iso);
+        html += '<div style="font-size:11px;text-align:center;padding:6px 2px;border-radius:4px;background:#f5f5f5;color:#ccc;' + (isFestivo ? 'font-style:italic;' : '') + '">' + d + (isFestivo ? ' 🚫' : '') + '</div>';
+      } else {
+        const bg = selected ? '#E5461A' : '#fff';
+        const color = selected ? '#fff' : '#333';
+        const border = selected ? '#E5461A' : '#e0d5c5';
+        html += '<div onclick="toggleCalDay(\'' + iso + '\')" style="font-size:11px;text-align:center;padding:6px 2px;border-radius:4px;background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';cursor:pointer;font-weight:' + (selected ? '700' : '400') + ';">' + d + '</div>';
+      }
+    }
+
+    grid.innerHTML = html;
+  }
+
+  function toggleCalDay(iso) {
+    const plan = document.getElementById('fPlan').value;
+    const maxDays = DIAS_PLAN[plan] || 5;
+    const idx = calSelectedDays.indexOf(iso);
+    if (idx > -1) {
+      calSelectedDays.splice(idx, 1);
+    } else {
+      if (calSelectedDays.length >= maxDays) {
+        alert('Ya seleccionaste los ' + maxDays + ' dias del plan ' + plan + '. Desmarca uno primero.');
+        return;
+      }
+      calSelectedDays.push(iso);
+      calSelectedDays.sort();
+    }
+    renderCalendar();
+  }
+
+  function calPrev() { calViewMonth--; if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; } renderCalendar(); }
+  function calNext() { calViewMonth++; if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; } renderCalendar(); }
+
+  // ===== MULTIPLE ADDRESSES =====
+  let formDirecciones = [];
+
+  function getDireccionesCliente(c) {
+    // Backward compat: si el cliente tiene el viejo formato, convertir
+    if (Array.isArray(c.direcciones) && c.direcciones.length > 0) return c.direcciones;
+    return [{
+      etiqueta: 'Principal',
+      direccion: c.direccion || '',
+      referencia: c.referencia || '',
+      barrio: c.barrio || ''
+    }];
+  }
+
+  function renderDireccionesForm() {
+    const cont = document.getElementById('direccionesList');
+    cont.innerHTML = formDirecciones.map((d, i) => {
+      const esPrincipal = i === 0;
+      return '<div class="direccion-item" style="border:1px solid rgba(0,0,0,0.08); border-radius:10px; padding:12px; margin-bottom:10px; background:' + (esPrincipal ? '#FFF0DC' : '#fafafa') + ';">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+          '<input type="text" value="' + (d.etiqueta || '').replace(/"/g, '&quot;') + '" placeholder="Etiqueta (Principal / Oficina / Casa…)" oninput="updateDireccion(' + i + ',\'etiqueta\',this.value)" style="flex:1; padding:6px 10px; font-size:12px; font-weight:700; color:#E5461A; border:none; background:transparent;">' +
+          (esPrincipal ? '<span style="font-size:10px; color:#E5461A; font-weight:700;">OBLIGATORIA</span>' : '<button type="button" onclick="eliminarDireccion(' + i + ')" style="background:transparent; border:none; color:#999; cursor:pointer; font-size:18px;">×</button>') +
+        '</div>' +
+        '<input type="text" class="form-input" placeholder="Dirección (Cra 45 #67-12)" value="' + (d.direccion || '').replace(/"/g, '&quot;') + '" oninput="updateDireccion(' + i + ',\'direccion\',this.value)" style="margin-bottom:6px;">' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
+          '<input type="text" class="form-input" placeholder="Referencia (frente al parque…)" value="' + (d.referencia || '').replace(/"/g, '&quot;') + '" oninput="updateDireccion(' + i + ',\'referencia\',this.value)">' +
+          '<input type="text" class="form-input" placeholder="Barrio" value="' + (d.barrio || '').replace(/"/g, '&quot;') + '" oninput="updateDireccion(' + i + ',\'barrio\',this.value)">' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function updateDireccion(idx, campo, valor) {
+    if (formDirecciones[idx]) formDirecciones[idx][campo] = valor;
+  }
+
+  function agregarDireccion() {
+    formDirecciones.push({ etiqueta: '', direccion: '', referencia: '', barrio: '' });
+    renderDireccionesForm();
+  }
+
+  function eliminarDireccion(idx) {
+    if (idx === 0) { alert('La dirección principal no se puede eliminar'); return; }
+    formDirecciones.splice(idx, 1);
+    renderDireccionesForm();
+  }
+
+  function openModal(mode) {
+    document.getElementById('clientModal').classList.add('show');
+    if (mode === 'add') {
+      document.getElementById('modalTitle').textContent = 'Nuevo Cliente';
+      document.getElementById('editIndex').value = -1;
+      ['fNombre','fTelefono','fNotas'].forEach(id => document.getElementById(id).value = '');
+      formDirecciones = [{ etiqueta: 'Principal', direccion: '', referencia: '', barrio: '' }];
+      renderDireccionesForm();
+      document.getElementById('fPlan').value = 'Semanal';
+      document.getElementById('fEntrega').value = 'Domicilio dia';
+      document.getElementById('fEstado').value = 'Por confirmar';
+      document.getElementById('fKit').value = 'Pendiente';
+      document.getElementById('fInicio').value = '2026-04-20';
+      calSelectedDays = [];
+      calViewMonth = 3; calViewYear = 2026;
+      renderCalendar();
+    }
+  }
+
+  function closeModal() { document.getElementById('clientModal').classList.remove('show'); }
+
+  function saveClient() {
+    const nombre = document.getElementById('fNombre').value.trim();
+    if (!nombre) { alert('El nombre es obligatorio'); return; }
+
+    // Validar dirección principal
+    if (!formDirecciones[0] || !formDirecciones[0].direccion.trim()) {
+      alert('La dirección principal es obligatoria');
+      return;
+    }
+    // Limpiar etiquetas vacías
+    formDirecciones.forEach((d, i) => {
+      if (!d.etiqueta || !d.etiqueta.trim()) d.etiqueta = i === 0 ? 'Principal' : 'Dirección ' + (i+1);
+    });
+    // Filtrar direcciones extras vacías
+    const direcciones = formDirecciones.filter((d, i) => i === 0 || d.direccion.trim());
+
+    const plan = document.getElementById('fPlan').value;
+    const maxDays = DIAS_PLAN[plan] || 5;
+
+    if (calSelectedDays.length === 0) {
+      alert('Selecciona al menos 1 dia de entrega en el calendario');
+      return;
+    }
+
+    if (calSelectedDays.length > maxDays) {
+      alert('Seleccionaste ' + calSelectedDays.length + ' dias pero el plan ' + plan + ' solo incluye ' + maxDays);
+      return;
+    }
+
+    const principal = direcciones[0];
+    const client = {
+      nombre,
+      telefono: document.getElementById('fTelefono').value.trim(),
+      direcciones,
+      // Campos legacy para compatibilidad (derivados de la principal)
+      direccion: principal.direccion,
+      referencia: principal.referencia,
+      barrio: principal.barrio,
+      plan,
+      entrega: document.getElementById('fEntrega').value,
+      estado: document.getElementById('fEstado').value,
+      inicio: document.getElementById('fInicio').value,
+      kit: document.getElementById('fKit').value,
+      notas: document.getElementById('fNotas').value.trim()
+    };
+
+    const idx = parseInt(document.getElementById('editIndex').value);
+    if (idx >= 0) {
+      // Preserva campos auxiliares (setActual, etc.)
+      client.setActual = clients[idx].setActual;
+      clients[idx] = client;
+      saveClientSchedule(idx, calSelectedDays);
+    } else {
+      clients.push(client);
+      saveClientSchedule(clients.length - 1, calSelectedDays);
+    }
+
+    save();
+    closeModal();
+    renderAll();
+  }
+
+  function editClient(idx) {
+    const c = clients[idx];
+    document.getElementById('editIndex').value = idx;
+    document.getElementById('modalTitle').textContent = 'Editar Cliente';
+    document.getElementById('fNombre').value = c.nombre;
+    document.getElementById('fTelefono').value = c.telefono || '';
+    formDirecciones = JSON.parse(JSON.stringify(getDireccionesCliente(c)));
+    renderDireccionesForm();
+    document.getElementById('fPlan').value = c.plan;
+    document.getElementById('fEntrega').value = c.entrega;
+    document.getElementById('fEstado').value = c.estado;
+    document.getElementById('fInicio').value = c.inicio || '';
+    document.getElementById('fKit').value = c.kit || 'Pendiente';
+    document.getElementById('fNotas').value = c.notas || '';
+    calSelectedDays = getClientSchedule(idx);
+    if (calSelectedDays.length > 0) {
+      const firstDate = new Date(calSelectedDays[0]);
+      calViewMonth = firstDate.getMonth();
+      calViewYear = firstDate.getFullYear();
+    } else {
+      calViewMonth = 3; calViewYear = 2026;
+    }
+    renderCalendar();
+    document.getElementById('clientModal').classList.add('show');
+  }
+
+  function deleteClient(idx) {
+    if (confirm('Eliminar a ' + clients[idx].nombre + '?')) {
+      clients.splice(idx, 1);
+      save(); renderAll();
+    }
+  }
+
+  function toggleKit(idx) {
+    clients[idx].kit = clients[idx].kit === 'Entregado' ? 'Pendiente' : 'Entregado';
+    save(); renderAll();
+  }
+
+  function toggleDelivery(dia, nombre) {
+    if (!deliveries[dia]) deliveries[dia] = {};
+    deliveries[dia][nombre] = !deliveries[dia][nombre];
+    save(); renderEntregas(); renderDashboard();
+  }
+
+  function filterPlan(plan, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderClients(plan);
+  }
+
+  function filterClients(search) { renderClients('todos', search); }
+
+  function toggleNota(td) {
+    const short = td.querySelector('.nota-short');
+    const full = td.querySelector('.nota-full');
+    if (!short || !full) return;
+    if (full.style.display === 'none') {
+      short.style.display = 'none';
+      full.style.display = 'inline';
+    } else {
+      short.style.display = 'inline';
+      full.style.display = 'none';
+    }
+  }
+
+  // Festivos Colombia 2026
+  const FESTIVOS = [
+    '2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03',
+    '2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-06-29',
+    '2026-07-20','2026-08-07','2026-08-17','2026-10-12','2026-11-02',
+    '2026-11-16','2026-12-08','2026-12-25'
+  ];
+
+  function esDiaHabil(date) {
+    const dow = date.getDay();
+    if (dow === 0 || dow === 6) return false;
+    const iso = date.toISOString().split('T')[0];
+    return !FESTIVOS.includes(iso);
+  }
+
+  function addDiasHabiles(inicio, dias) {
+    const d = new Date(inicio);
+    let count = 0;
+    while (count < dias) {
+      d.setDate(d.getDate() + 1);
+      if (esDiaHabil(d)) count++;
+    }
+    return d;
+  }
+
+  function calcVence(inicio, plan) {
+    if (!inicio) return '—';
+    const dias = DIAS_PLAN[plan] || 5;
+    const vence = addDiasHabiles(inicio, dias);
+    return vence.toLocaleDateString('es-CO');
+  }
+
+  function calcVenceDate(inicio, plan) {
+    if (!inicio) return null;
+    return addDiasHabiles(inicio, DIAS_PLAN[plan] || 5);
+  }
+
+  function diasHabilesEntre(fecha1, fecha2) {
+    const d1 = new Date(fecha1);
+    const d2 = new Date(fecha2);
+    let count = 0;
+    const d = new Date(d1);
+    while (d < d2) {
+      d.setDate(d.getDate() + 1);
+      if (esDiaHabil(d)) count++;
+    }
+    return count;
+  }
+
+  // ===== CALENDARIO DE DIAS =====
+  function getClientSchedule(clientIdx) {
+    const key = 'encocados_schedule_' + clientIdx;
+    return JSON.parse(localStorage.getItem(key) || '[]');
+  }
+
+  function saveClientSchedule(clientIdx, dates) {
+    localStorage.setItem('encocados_schedule_' + clientIdx, JSON.stringify(dates));
+  }
+
+  // ===== CANCELACIONES =====
+  let cancellations = JSON.parse(localStorage.getItem('encocados_cancellations') || '[]');
+
+  function saveCancellations() {
+    localStorage.setItem('encocados_cancellations', JSON.stringify(cancellations));
+  }
+
+  function requestCancelDay(clientIdx, dayToCancel) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const cancelDate = new Date(dayToCancel);
+    cancelDate.setHours(0,0,0,0);
+    const habiles = diasHabilesEntre(today, cancelDate);
+
+    if (habiles < 2) {
+      alert('No se puede cancelar. Se requieren minimo 2 dias habiles de anticipacion. Dias habiles de diferencia: ' + habiles);
+      return false;
+    }
+
+    const schedule = getClientSchedule(clientIdx);
+    const idx = schedule.indexOf(dayToCancel);
+    if (idx > -1) {
+      schedule.splice(idx, 1);
+      saveClientSchedule(clientIdx, schedule);
+    }
+
+    cancellations.push({
+      clientIdx,
+      cliente: clients[clientIdx].nombre,
+      fechaSolicitud: today.toISOString().split('T')[0],
+      diaCancelado: dayToCancel,
+      anticipacion: habiles,
+      estado: 'Cancelado',
+      reprogramado: ''
+    });
+    saveCancellations();
+    renderAll();
+    return true;
+  }
+
+  function reprogramDay(cancIdx, newDay) {
+    const canc = cancellations[cancIdx];
+    const clientIdx = canc.clientIdx;
+    const schedule = getClientSchedule(clientIdx);
+
+    if (schedule.includes(newDay)) {
+      alert('Ese dia ya esta programado');
+      return;
+    }
+
+    const d = new Date(newDay);
+    if (!esDiaHabil(d)) {
+      alert('Solo se puede reprogramar a dias habiles (lunes a viernes, no festivos)');
+      return;
+    }
+
+    schedule.push(newDay);
+    schedule.sort();
+    saveClientSchedule(clientIdx, schedule);
+    canc.reprogramado = newDay;
+    saveCancellations();
+    renderAll();
+  }
+
+  // PAGOS
+  function openPaymentModal() {
+    document.getElementById('paymentModal').classList.add('show');
+    const sel = document.getElementById('pCliente');
+    sel.innerHTML = clients.map(c => '<option value="' + c.nombre + '">' + c.nombre + '</option>').join('');
+    document.getElementById('pFecha').value = new Date().toISOString().split('T')[0];
+    updateMonto();
+  }
+
+  function closePaymentModal() { document.getElementById('paymentModal').classList.remove('show'); }
+
+  function updateMonto() {
+    const concepto = document.getElementById('pConcepto').value;
+    const montos = { 'Plan Semanal': 90000, 'Plan Quincenal': 170000, 'Plan Mensual': 320000, 'Kit Cocas': 80000, 'Kit Cocas dto': 64000 };
+    document.getElementById('pMonto').value = montos[concepto] || 90000;
+  }
+
+  function savePayment() {
+    const payment = {
+      fecha: document.getElementById('pFecha').value,
+      cliente: document.getElementById('pCliente').value,
+      concepto: document.getElementById('pConcepto').value,
+      monto: parseInt(document.getElementById('pMonto').value),
+      metodo: document.getElementById('pMetodo').value,
+      estado: document.getElementById('pEstado').value
+    };
+    payments.push(payment);
+    save(); closePaymentModal(); renderAll();
+  }
+
+  function updatePrecio() {}
+
+  // ===== MENUS SEMANALES =====
+  const DIAS_SEMANA = ['Lunes','Martes','Miercoles','Jueves','Viernes'];
+
+  function openMenuModal() {
+    document.getElementById('menuModal').classList.add('show');
+    document.getElementById('mNombre').value = '';
+    document.getElementById('mFecha').value = '2026-04-20';
+    renderMenuDiasForm();
+  }
+
+  function closeMenuModal() { document.getElementById('menuModal').classList.remove('show'); }
+
+  function renderMenuDiasForm() {
+    const container = document.getElementById('menuDiasForm');
+    const niveles = ['Simple','Intermedio','Premium'];
+
+    // Build recipe options by category
+    const protOpts = recetas.filter(r => r.categoria === 'Seco' && r.subcategoria === 'Proteina').map(r => '<option value="'+r.nombre+'">'+r.nombre+'</option>').join('');
+    const guarOpts = recetas.filter(r => r.categoria === 'Seco' && r.subcategoria === 'Guarnicion').map(r => '<option value="'+r.nombre+'">'+r.nombre+'</option>').join('');
+    const sopaOpts = recetas.filter(r => r.categoria === 'Sopa').map(r => '<option value="'+r.nombre+'">'+r.nombre+'</option>').join('');
+    const ensOpts = recetas.filter(r => r.categoria === 'Ensalada').map(r => '<option value="'+r.nombre+'">'+r.nombre+'</option>').join('');
+    const bebOpts = recetas.filter(r => r.categoria === 'Bebida').map(r => '<option value="'+r.nombre+'">'+r.nombre+'</option>').join('');
+
+    let html = '';
+    DIAS_SEMANA.forEach((dia, i) => {
+      html += '<div style="background:var(--card); border:1px solid var(--borde); border-radius:10px; padding:12px 14px; margin-bottom:8px;">' +
+        '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">' +
+        '<strong style="font-size:13px; width:80px;">' + dia + '</strong>' +
+        '<select class="form-input" id="mNivel'+i+'" style="width:auto; font-size:11px; padding:6px 10px;">' +
+        niveles.map(n => '<option value="'+n+'">'+n+'</option>').join('') + '</select></div>' +
+        '<div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:6px;">' +
+        '<div style="border:1px dashed var(--borde); border-radius:8px; padding:6px;"><label class="form-label" style="font-size:9px; font-weight:700; color:var(--naranja, #E5461A);">Plato Fuerte</label>' +
+          '<div style="margin-top:4px;"><label class="form-label" style="font-size:8px;">Proteina</label><select class="form-input" id="mProt'+i+'" style="font-size:11px; padding:6px;"><option value="">Escribir...</option>'+protOpts+'</select>' +
+          '<input type="text" class="form-input" id="mProtText'+i+'" placeholder="O escribe aqui" style="font-size:10px; padding:5px; margin-top:4px;"></div>' +
+          '<div style="margin-top:6px;"><label class="form-label" style="font-size:8px;">Guarnicion 1 (opcional)</label><select class="form-input" id="mGuar1'+i+'" style="font-size:11px; padding:6px;"><option value="">Escribir...</option>'+guarOpts+'</select>' +
+          '<input type="text" class="form-input" id="mGuar1Text'+i+'" placeholder="O escribe aqui" style="font-size:10px; padding:5px; margin-top:4px;"></div>' +
+          '<div style="margin-top:6px;"><label class="form-label" style="font-size:8px;">Guarnicion 2 (opcional)</label><select class="form-input" id="mGuar2'+i+'" style="font-size:11px; padding:6px;"><option value="">Escribir...</option>'+guarOpts+'</select>' +
+          '<input type="text" class="form-input" id="mGuar2Text'+i+'" placeholder="O escribe aqui" style="font-size:10px; padding:5px; margin-top:4px;"></div>' +
+        '</div>' +
+        '<div><label class="form-label" style="font-size:8px;">Sopa/Extra</label><select class="form-input" id="mSopa'+i+'" style="font-size:11px; padding:6px;"><option value="">Escribir...</option>'+sopaOpts+'</select>' +
+        '<input type="text" class="form-input" id="mSopaText'+i+'" placeholder="O escribe aqui" style="font-size:10px; padding:5px; margin-top:4px;"></div>' +
+        '<div><label class="form-label" style="font-size:8px;">Ensalada</label><select class="form-input" id="mEns'+i+'" style="font-size:11px; padding:6px;"><option value="">Escribir...</option>'+ensOpts+'</select>' +
+        '<input type="text" class="form-input" id="mEnsText'+i+'" placeholder="O escribe aqui" style="font-size:10px; padding:5px; margin-top:4px;"></div>' +
+        '<div><label class="form-label" style="font-size:8px;">Bebida</label><select class="form-input" id="mBeb'+i+'" style="font-size:11px; padding:6px;"><option value="">Escribir...</option>'+bebOpts+'</select>' +
+        '<input type="text" class="form-input" id="mBebText'+i+'" placeholder="O escribe aqui" style="font-size:10px; padding:5px; margin-top:4px;"></div>' +
+        '</div></div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function saveMenu() {
+    const nombre = document.getElementById('mNombre').value.trim();
+    if (!nombre) { alert('Dale un nombre al menu'); return; }
+
+    const menu = {
+      nombre,
+      fecha: document.getElementById('mFecha').value,
+      dias: DIAS_SEMANA.map((dia, i) => ({
+        dia,
+        nivel: document.getElementById('mNivel'+i).value,
+        proteina: document.getElementById('mProt'+i).value || document.getElementById('mProtText'+i).value,
+        guarnicion1: document.getElementById('mGuar1'+i).value || document.getElementById('mGuar1Text'+i).value,
+        guarnicion2: document.getElementById('mGuar2'+i).value || document.getElementById('mGuar2Text'+i).value,
+        sopa: document.getElementById('mSopa'+i).value || document.getElementById('mSopaText'+i).value,
+        ensalada: document.getElementById('mEns'+i).value || document.getElementById('mEnsText'+i).value,
+        bebida: document.getElementById('mBeb'+i).value || document.getElementById('mBebText'+i).value
+      })),
+      creado: new Date().toLocaleDateString('es-CO')
+    };
+
+    menus.push(menu);
+    save(); closeMenuModal(); renderAll();
+  }
+
+  function deleteMenu(idx) {
+    if (confirm('Eliminar menu "' + menus[idx].nombre + '"?')) {
+      menus.splice(idx, 1); save(); renderAll();
+    }
+  }
+
+  function renderMenus() {
+    const content = document.getElementById('menusContent');
+    const empty = document.getElementById('emptyMenus');
+
+    if (menus.length === 0) { content.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    content.innerHTML = menus.map((m, idx) => {
+      let diasHtml = m.dias.map(d => {
+        const nivelClass = d.nivel === 'Simple' ? 'nivel-simple' : d.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+        let platoFuerte = '';
+        if (d.proteina || d.guarnicion1 || d.guarnicion2) {
+          const parts = [];
+          if (d.proteina) parts.push('<strong>' + d.proteina + '</strong>');
+          if (d.guarnicion1) parts.push(d.guarnicion1);
+          if (d.guarnicion2) parts.push(d.guarnicion2);
+          platoFuerte = parts.join(' + ');
+        } else if (d.seco) {
+          platoFuerte = d.seco;
+        } else {
+          platoFuerte = '—';
+        }
+        return '<tr><td><strong>' + d.dia + '</strong></td>' +
+          '<td><span class="nivel-badge ' + nivelClass + '">' + d.nivel + '</span></td>' +
+          '<td>' + platoFuerte + '</td>' +
+          '<td>' + (d.sopa || '—') + '</td>' +
+          '<td>' + (d.ensalada || '—') + '</td>' +
+          '<td>' + (d.bebida || '—') + '</td></tr>';
+      }).join('');
+
+      return '<div class="table-container" style="margin-bottom:16px;">' +
+        '<div class="table-header">' +
+        '<div><span class="table-title">' + m.nombre + '</span><span style="font-size:11px; color:var(--gris); margin-left:12px;">Desde: ' + m.fecha + ' | Creado: ' + m.creado + '</span></div>' +
+        '<div style="display:flex; gap:6px;"><button class="btn btn-danger btn-small" onclick="deleteMenu('+idx+')">Eliminar</button></div></div>' +
+        '<table><thead><tr><th>Dia</th><th>Nivel</th><th>Plato Fuerte (proteina + guarniciones)</th><th>Sopa/Extra</th><th>Ensalada</th><th>Bebida</th></tr></thead>' +
+        '<tbody>' + diasHtml + '</tbody></table></div>';
+    }).reverse().join('');
+  }
+
+  // ===== RECETARIO =====
+  let recetaFilterCat = 'todos';
+  let recetaSearch = '';
+
+  function openRecetaModal() {
+    document.getElementById('recetaModal').classList.add('show');
+    document.getElementById('recetaModalTitle').textContent = 'Nueva Receta';
+    document.getElementById('recetaEditIndex').value = -1;
+    ['rNombre','rIngredientes','rPreparacion','rAcomp','rNotas'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('rCosto').value = '';
+    document.getElementById('rCategoria').value = 'Seco';
+    document.getElementById('rSubCategoria').value = 'Proteina';
+    document.getElementById('rNivel').value = 'Intermedio';
+    toggleSubCategoria();
+  }
+
+  function closeRecetaModal() { document.getElementById('recetaModal').classList.remove('show'); }
+
+  function toggleSubCategoria() {
+    const cat = document.getElementById('rCategoria').value;
+    document.getElementById('rSubCategoriaRow').style.display = cat === 'Seco' ? 'flex' : 'none';
+  }
+
+  function saveReceta() {
+    const nombre = document.getElementById('rNombre').value.trim();
+    if (!nombre) { alert('El nombre es obligatorio'); return; }
+
+    const cat = document.getElementById('rCategoria').value;
+    const receta = {
+      nombre,
+      categoria: cat,
+      subcategoria: cat === 'Seco' ? document.getElementById('rSubCategoria').value : '',
+      nivel: document.getElementById('rNivel').value,
+      costo: parseInt(document.getElementById('rCosto').value) || 0,
+      ingredientes: document.getElementById('rIngredientes').value.trim(),
+      preparacion: document.getElementById('rPreparacion').value.trim(),
+      acompanantes: document.getElementById('rAcomp').value.trim(),
+      notas: document.getElementById('rNotas').value.trim(),
+      creado: new Date().toLocaleDateString('es-CO')
+    };
+
+    const idx = parseInt(document.getElementById('recetaEditIndex').value);
+    if (idx >= 0) { recetas[idx] = receta; }
+    else { recetas.push(receta); }
+
+    save(); closeRecetaModal(); renderAll();
+  }
+
+  function editReceta(idx) {
+    const r = recetas[idx];
+    document.getElementById('recetaEditIndex').value = idx;
+    document.getElementById('recetaModalTitle').textContent = 'Editar Receta';
+    document.getElementById('rNombre').value = r.nombre;
+    document.getElementById('rCategoria').value = r.categoria;
+    document.getElementById('rSubCategoria').value = r.subcategoria || 'Proteina';
+    toggleSubCategoria();
+    document.getElementById('rNivel').value = r.nivel;
+    document.getElementById('rCosto').value = r.costo || '';
+    document.getElementById('rIngredientes').value = r.ingredientes || '';
+    document.getElementById('rPreparacion').value = r.preparacion || '';
+    document.getElementById('rAcomp').value = r.acompanantes || '';
+    document.getElementById('rNotas').value = r.notas || '';
+    document.getElementById('recetaModal').classList.add('show');
+  }
+
+  function viewReceta(idx) {
+    const r = recetas[idx];
+    const nivelClass = r.nivel === 'Simple' ? 'nivel-simple' : r.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+    const catColors = { 'Seco': 'var(--dorado)', 'Sopa': 'var(--terracota)', 'Ensalada': 'var(--menta)', 'Bebida': 'var(--azul)', 'Extra': 'var(--gris)' };
+
+    let html = '<div style="margin-bottom:16px;">' +
+      '<div style="font-family:Outfit,sans-serif; font-size:24px; font-weight:900; margin-bottom:6px;">' + r.nombre + '</div>' +
+      '<span class="nivel-badge ' + nivelClass + '">' + r.nivel + '</span> ' +
+      '<span style="font-size:11px; color:' + (catColors[r.categoria] || 'var(--gris)') + '; font-weight:700;">' + r.categoria + (r.subcategoria ? ' · ' + r.subcategoria : '') + '</span>' +
+      (r.costo ? ' <span style="font-size:12px; color:var(--verde); font-weight:700; margin-left:8px;">$' + r.costo.toLocaleString() + '/porcion</span>' : '') +
+      '</div>';
+
+    if (r.ingredientes) html += '<div style="margin-bottom:14px;"><div class="form-label">Ingredientes por porcion</div><div style="font-size:13px; color:rgba(255,255,255,0.6); line-height:1.7; background:var(--card); padding:12px; border-radius:8px;">' + r.ingredientes.replace(/\n/g,'<br>') + '</div></div>';
+    if (r.preparacion) html += '<div style="margin-bottom:14px;"><div class="form-label">Preparacion</div><div style="font-size:13px; color:rgba(255,255,255,0.6); line-height:1.7; background:var(--card); padding:12px; border-radius:8px;">' + r.preparacion.replace(/\n/g,'<br>') + '</div></div>';
+    if (r.acompanantes) html += '<div style="margin-bottom:14px;"><div class="form-label">Acompanantes</div><div style="font-size:13px; color:rgba(255,255,255,0.5);">' + r.acompanantes + '</div></div>';
+    if (r.notas) html += '<div style="margin-bottom:14px;"><div class="form-label">Notas del chef</div><div style="font-size:13px; color:var(--terracota); font-style:italic;">' + r.notas + '</div></div>';
+
+    document.getElementById('viewRecetaContent').innerHTML = html;
+    document.getElementById('viewRecetaModal').classList.add('show');
+  }
+
+  function deleteReceta(idx) {
+    if (confirm('Eliminar receta "' + recetas[idx].nombre + '"?')) {
+      recetas.splice(idx, 1); save(); renderAll();
+    }
+  }
+
+  function filterRecetaCat(cat, btn) {
+    recetaFilterCat = cat;
+    document.querySelectorAll('#page-recetario .filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderRecetas();
+  }
+
+  function filterRecetas(search) {
+    recetaSearch = search;
+    renderRecetas();
+  }
+
+  function renderRecetas() {
+    const grid = document.getElementById('recetasGrid');
+    const empty = document.getElementById('emptyRecetas');
+
+    let filtered = recetas;
+    if (recetaFilterCat !== 'todos') {
+      if (recetaFilterCat === 'Seco/Proteina') {
+        filtered = filtered.filter(r => r.categoria === 'Seco' && r.subcategoria === 'Proteina');
+      } else if (recetaFilterCat === 'Seco/Guarnicion') {
+        filtered = filtered.filter(r => r.categoria === 'Seco' && r.subcategoria === 'Guarnicion');
+      } else {
+        filtered = filtered.filter(r => r.categoria === recetaFilterCat);
+      }
+    }
+    if (recetaSearch) filtered = filtered.filter(r => r.nombre.toLowerCase().includes(recetaSearch.toLowerCase()));
+
+    if (filtered.length === 0 && recetas.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--gris);">No hay recetas en esta categoria</div>';
+      return;
+    }
+
+    const catColors = { 'Seco': '#C9A96E', 'Sopa': '#C4704B', 'Ensalada': '#00D4AA', 'Bebida': '#42A5F5', 'Extra': '#888' };
+    const catIcons = { 'Seco': '🍖', 'Sopa': '🥣', 'Ensalada': '🥗', 'Bebida': '🥤', 'Extra': '🥐' };
+
+    grid.innerHTML = filtered.map((r, fi) => {
+      const idx = recetas.indexOf(r);
+      const nivelClass = r.nivel === 'Simple' ? 'nivel-simple' : r.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+      const color = catColors[r.categoria] || '#888';
+
+      return '<div style="background:var(--negro); border:1px solid var(--borde); border-radius:14px; overflow:hidden; border-top:3px solid ' + color + '; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform=\'translateY(-3px)\'" onmouseout="this.style.transform=\'none\'">' +
+        '<div style="padding:16px 18px;" onclick="viewReceta('+idx+')">' +
+        '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">' +
+        '<span style="font-size:24px;">' + (catIcons[r.categoria] || '') + '</span>' +
+        '<span class="nivel-badge ' + nivelClass + '">' + r.nivel + '</span></div>' +
+        '<div style="font-family:Outfit,sans-serif; font-size:16px; font-weight:800; margin-bottom:4px;">' + r.nombre + '</div>' +
+        '<div style="font-size:11px; color:' + color + '; font-weight:600; margin-bottom:6px;">' + r.categoria + (r.subcategoria ? ' · ' + r.subcategoria : '') + '</div>' +
+        (r.costo ? '<div style="font-size:12px; color:var(--verde); font-weight:700;">$' + r.costo.toLocaleString() + '/porcion</div>' : '') +
+        (r.acompanantes ? '<div style="font-size:10px; color:var(--gris); margin-top:6px;">' + r.acompanantes + '</div>' : '') +
+        '</div>' +
+        '<div style="padding:8px 18px; border-top:1px solid var(--borde); display:flex; gap:6px;">' +
+        '<button class="btn btn-secondary btn-small" style="flex:1;" onclick="event.stopPropagation(); editReceta('+idx+')">Editar</button>' +
+        '<button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteReceta('+idx+')">X</button></div></div>';
+    }).join('');
+
+    document.getElementById('recetaCount').textContent = recetas.length;
+  }
+
+  // Update renderAll
+  const _origRenderAll = renderAll;
+  renderAll = function() {
+    _origRenderAll();
+    renderMenus();
+    renderRecetas();
+    document.getElementById('recetaCount').textContent = recetas.length;
+  };
+
+  // ===== PRODUCTOS =====
+  let filtroProductoCategoria = 'todos';
+
+  function filterProductos(cat, btn) {
+    filtroProductoCategoria = cat;
+    document.querySelectorAll('#page-productos .filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderProductos();
+  }
+
+  function renderProductos() {
+    const body = document.getElementById('productosBody');
+    const empty = document.getElementById('emptyProductos');
+    const list = filtroProductoCategoria === 'todos' ? productos : productos.filter(p => p.categoria === filtroProductoCategoria);
+
+    if (list.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    body.innerHTML = list.map(p => {
+      const origIdx = productos.indexOf(p);
+      return '<tr>' +
+        '<td><strong>' + (p.nombre || '') + '</strong>' + (p.notas ? '<br><span style="font-size:11px; color:#999;">' + p.notas + '</span>' : '') + '</td>' +
+        '<td><span class="status" style="background:#FFF0DC; color:#E5461A;">' + (p.categoria || '—') + '</span></td>' +
+        '<td>' + (p.proveedor || '—') + '</td>' +
+        '<td style="font-weight:700;">$' + (p.costo || 0).toLocaleString() + '</td>' +
+        '<td>' + (p.unidad || '—') + '</td>' +
+        '<td style="font-size:11px; color:#666;">' + (p.actualizadoEn || '—') + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="btn btn-small btn-secondary" onclick="editProducto(' + origIdx + ')">✎</button> ' +
+          '<button class="btn btn-small btn-secondary" onclick="deleteProducto(' + origIdx + ')">×</button>' +
+        '</td></tr>';
+    }).join('');
+  }
+
+  function cargarProveedoresEnSelect() {
+    const sel = document.getElementById('prodProveedor');
+    sel.innerHTML = '<option value="">(sin proveedor fijo)</option>' +
+      proveedores.map(p => '<option value="' + p.nombre + '">' + p.nombre + '</option>').join('');
+  }
+
+  function openProductoModal() {
+    document.getElementById('productoModalTitle').textContent = 'Nuevo Producto';
+    document.getElementById('productoIdx').value = -1;
+    document.getElementById('prodNombre').value = '';
+    document.getElementById('prodCategoria').value = 'Proteínas';
+    document.getElementById('prodCosto').value = '';
+    document.getElementById('prodUnidad').value = 'kg';
+    cargarProveedoresEnSelect();
+    document.getElementById('prodProveedor').value = '';
+    document.getElementById('prodNotas').value = '';
+    document.getElementById('productoModal').classList.add('show');
+  }
+
+  function editProducto(idx) {
+    const p = productos[idx];
+    if (!p) return;
+    document.getElementById('productoModalTitle').textContent = 'Editar Producto';
+    document.getElementById('productoIdx').value = idx;
+    document.getElementById('prodNombre').value = p.nombre || '';
+    document.getElementById('prodCategoria').value = p.categoria || 'Proteínas';
+    document.getElementById('prodCosto').value = p.costo || '';
+    document.getElementById('prodUnidad').value = p.unidad || 'kg';
+    cargarProveedoresEnSelect();
+    document.getElementById('prodProveedor').value = p.proveedor || '';
+    document.getElementById('prodNotas').value = p.notas || '';
+    document.getElementById('productoModal').classList.add('show');
+  }
+
+  function closeProductoModal() {
+    document.getElementById('productoModal').classList.remove('show');
+  }
+
+  function saveProducto() {
+    const nombre = document.getElementById('prodNombre').value.trim();
+    if (!nombre) { alert('El nombre es obligatorio'); return; }
+    const prod = {
+      nombre,
+      categoria: document.getElementById('prodCategoria').value,
+      costo: parseFloat(document.getElementById('prodCosto').value) || 0,
+      unidad: document.getElementById('prodUnidad').value,
+      proveedor: document.getElementById('prodProveedor').value,
+      notas: document.getElementById('prodNotas').value.trim(),
+      actualizadoEn: new Date().toISOString().slice(0,10)
+    };
+    const idx = parseInt(document.getElementById('productoIdx').value);
+    if (idx >= 0) productos[idx] = prod; else productos.push(prod);
+    save();
+    closeProductoModal();
+    renderProductos();
+  }
+
+  function deleteProducto(idx) {
+    if (!confirm('¿Eliminar este producto?')) return;
+    productos.splice(idx, 1);
+    save();
+    renderProductos();
+  }
+
+  // ===== PROVEEDORES =====
+  function renderProveedores() {
+    const body = document.getElementById('proveedoresBody');
+    const empty = document.getElementById('emptyProveedores');
+    if (proveedores.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    body.innerHTML = proveedores.map((p, i) => {
+      const telLink = p.telefono ? '<a href="https://wa.me/57' + p.telefono.replace(/\D/g,'') + '" target="_blank" style="color:#25D366;">' + p.telefono + '</a>' : '—';
+      return '<tr>' +
+        '<td><strong>' + (p.nombre || '') + '</strong></td>' +
+        '<td><span class="status" style="background:#FFF0DC; color:#E5461A;">' + (p.tipo || '—') + '</span></td>' +
+        '<td>' + (p.contacto || '—') + '</td>' +
+        '<td>' + telLink + '</td>' +
+        '<td style="font-size:11px;">' + (p.direccion || '—') + '</td>' +
+        '<td style="font-size:11px; color:#666;">' + (p.notas || '') + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="btn btn-small btn-secondary" onclick="editProveedor(' + i + ')">✎</button> ' +
+          '<button class="btn btn-small btn-secondary" onclick="deleteProveedor(' + i + ')">×</button>' +
+        '</td></tr>';
+    }).join('');
+  }
+
+  function openProveedorModal() {
+    document.getElementById('proveedorModalTitle').textContent = 'Nuevo Proveedor';
+    document.getElementById('proveedorIdx').value = -1;
+    document.getElementById('provNombre').value = '';
+    document.getElementById('provTipo').value = 'Proteínas';
+    document.getElementById('provContacto').value = '';
+    document.getElementById('provTelefono').value = '';
+    document.getElementById('provDireccion').value = '';
+    document.getElementById('provNotas').value = '';
+    document.getElementById('proveedorModal').classList.add('show');
+  }
+
+  function editProveedor(idx) {
+    const p = proveedores[idx];
+    if (!p) return;
+    document.getElementById('proveedorModalTitle').textContent = 'Editar Proveedor';
+    document.getElementById('proveedorIdx').value = idx;
+    document.getElementById('provNombre').value = p.nombre || '';
+    document.getElementById('provTipo').value = p.tipo || 'Proteínas';
+    document.getElementById('provContacto').value = p.contacto || '';
+    document.getElementById('provTelefono').value = p.telefono || '';
+    document.getElementById('provDireccion').value = p.direccion || '';
+    document.getElementById('provNotas').value = p.notas || '';
+    document.getElementById('proveedorModal').classList.add('show');
+  }
+
+  function closeProveedorModal() {
+    document.getElementById('proveedorModal').classList.remove('show');
+  }
+
+  function saveProveedor() {
+    const nombre = document.getElementById('provNombre').value.trim();
+    if (!nombre) { alert('El nombre es obligatorio'); return; }
+    const prov = {
+      nombre,
+      tipo: document.getElementById('provTipo').value,
+      contacto: document.getElementById('provContacto').value.trim(),
+      telefono: document.getElementById('provTelefono').value.trim(),
+      direccion: document.getElementById('provDireccion').value.trim(),
+      notas: document.getElementById('provNotas').value.trim()
+    };
+    const idx = parseInt(document.getElementById('proveedorIdx').value);
+    if (idx >= 0) proveedores[idx] = prov; else proveedores.push(prov);
+    save();
+    closeProveedorModal();
+    renderProveedores();
+  }
+
+  function deleteProveedor(idx) {
+    if (!confirm('¿Eliminar este proveedor?')) return;
+    proveedores.splice(idx, 1);
+    save();
+    renderProveedores();
+  }
+
+  // ===== RUTA DE DOMICILIO =====
+  function getEntregasFecha(fecha) {
+    // Devuelve lista de clientes activos con entrega ese día según su schedule
+    const activos = clients.filter(c => c.estado === 'Activo');
+    return activos.filter(c => {
+      const sched = getClientSchedule(clients.indexOf(c));
+      return sched.includes(fecha);
+    });
+  }
+
+  function renderRuta() {
+    const fechaEl = document.getElementById('rutaFecha');
+    if (!fechaEl) return;
+    if (!fechaEl.value) fechaEl.value = new Date().toISOString().slice(0,10);
+    const fecha = fechaEl.value;
+
+    const body = document.getElementById('rutaBody');
+    const empty = document.getElementById('emptyRuta');
+    const entregas = getEntregasFecha(fecha);
+
+    // Cargar preferencia de dirección ya seleccionada (guardada en deliveries[fecha])
+    const prefs = (deliveries[fecha] && deliveries[fecha]._rutaPrefs) || {};
+    const estados = (deliveries[fecha] && deliveries[fecha]._rutaEstados) || {};
+
+    if (entregas.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; } else { empty.style.display = 'none'; }
+
+    body.innerHTML = entregas.map((c, i) => {
+      const dirs = getDireccionesCliente(c);
+      const selIdx = typeof prefs[c.nombre] === 'number' ? prefs[c.nombre] : 0;
+      const dir = dirs[selIdx] || dirs[0];
+      const estado = estados[c.nombre] || 'Pendiente';
+      const telLink = c.telefono ? 'https://wa.me/57' + c.telefono.replace(/\D/g,'') : '#';
+
+      const dirSelect = dirs.length > 1
+        ? '<select onchange="cambiarDireccionRuta(\'' + c.nombre.replace(/'/g,"\\'") + '\', this.value)" style="width:100%; padding:5px; font-size:11px; margin-bottom:4px;">' +
+          dirs.map((d, di) => '<option value="' + di + '"' + (di === selIdx ? ' selected' : '') + '>' + (d.etiqueta || 'Dir ' + (di+1)) + '</option>').join('') +
+          '</select>'
+        : '<span style="font-size:11px; font-weight:700; color:#E5461A;">' + (dir.etiqueta || 'Principal') + '</span>';
+
+      return '<tr style="' + (estado === 'Entregado' ? 'opacity:0.5;' : '') + '">' +
+        '<td><strong>' + (i+1) + '</strong></td>' +
+        '<td><strong>' + c.nombre + '</strong></td>' +
+        '<td>' + dirSelect + '<div style="font-size:12px; margin-top:3px;">' + (dir.direccion || '—') + '</div>' +
+          (dir.referencia ? '<div style="font-size:10px; color:#999;">' + dir.referencia + '</div>' : '') + '</td>' +
+        '<td style="font-size:11px;">' + (dir.barrio || '—') + '</td>' +
+        '<td>' + (c.telefono ? '<a href="' + telLink + '" target="_blank" style="color:#25D366; font-weight:700;">📱</a>' : '—') + '</td>' +
+        '<td><span class="status ' + (estado === 'Entregado' ? 'status-activo' : 'status-pendiente') + '">' + estado + '</span></td>' +
+        '<td style="white-space:nowrap;">' +
+          (estado === 'Pendiente'
+            ? '<button class="btn btn-small btn-primary" onclick="marcarRuta(\'' + c.nombre.replace(/'/g,"\\'") + '\',\'Entregado\')">Entregar</button>'
+            : '<button class="btn btn-small btn-secondary" onclick="marcarRuta(\'' + c.nombre.replace(/'/g,"\\'") + '\',\'Pendiente\')">Revertir</button>') +
+        '</td></tr>';
+    }).join('');
+
+    document.getElementById('ruta-total').textContent = entregas.length;
+    document.getElementById('ruta-entregadas').textContent = entregas.filter(c => estados[c.nombre] === 'Entregado').length;
+    document.getElementById('ruta-pendientes').textContent = entregas.filter(c => (estados[c.nombre] || 'Pendiente') === 'Pendiente').length;
+  }
+
+  function cambiarDireccionRuta(nombre, dirIdx) {
+    const fecha = document.getElementById('rutaFecha').value;
+    if (!deliveries[fecha]) deliveries[fecha] = {};
+    if (!deliveries[fecha]._rutaPrefs) deliveries[fecha]._rutaPrefs = {};
+    deliveries[fecha]._rutaPrefs[nombre] = parseInt(dirIdx);
+    save();
+    renderRuta();
+  }
+
+  function marcarRuta(nombre, estado) {
+    const fecha = document.getElementById('rutaFecha').value;
+    if (!deliveries[fecha]) deliveries[fecha] = {};
+    if (!deliveries[fecha]._rutaEstados) deliveries[fecha]._rutaEstados = {};
+    deliveries[fecha]._rutaEstados[nombre] = estado;
+    // Sincronizar con el sistema de entregas existente
+    deliveries[fecha][nombre] = estado === 'Entregado';
+    save();
+    renderRuta();
+    renderEntregas();
+  }
+
+  function abrirRutaEnMaps() {
+    const fecha = document.getElementById('rutaFecha').value;
+    const entregas = getEntregasFecha(fecha);
+    const prefs = (deliveries[fecha] && deliveries[fecha]._rutaPrefs) || {};
+    if (entregas.length === 0) { alert('No hay entregas para esta fecha'); return; }
+
+    // Generar URL con todas las direcciones como waypoints en Google Maps
+    const destinos = entregas.map(c => {
+      const dirs = getDireccionesCliente(c);
+      const selIdx = typeof prefs[c.nombre] === 'number' ? prefs[c.nombre] : 0;
+      const d = dirs[selIdx] || dirs[0];
+      const partes = [d.direccion, d.barrio, 'Medellín, Colombia'].filter(Boolean);
+      return encodeURIComponent(partes.join(', '));
+    });
+
+    const url = 'https://www.google.com/maps/dir/' + destinos.join('/');
+    window.open(url, '_blank');
+  }
+
+  // ===== USUARIOS =====
+  async function renderUsuarios() {
+    const body = document.getElementById('usuariosBody');
+    const empty = document.getElementById('emptyUsuarios');
+    if (!body) return;
+    if (!window.currentUser || window.currentUser.role !== 'admin') return;
+    if (!window._fb) return;
+
+    try {
+      const snap = await window._fb.getDocs(window._fb.collection(window._fb.db, 'users'));
+      const users = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+      if (users.length === 0) { empty.style.display = 'block'; body.innerHTML = ''; return; }
+      empty.style.display = 'none';
+      body.innerHTML = users.map(u => {
+        const esActual = window.currentUser && window.currentUser.uid === u.uid;
+        return '<tr>' +
+          '<td><strong>' + (u.nombre || '—') + '</strong>' + (esActual ? ' <span style="font-size:10px; color:#E5461A;">(tú)</span>' : '') + '</td>' +
+          '<td>' + (u.email || '—') + '</td>' +
+          '<td><span class="status" style="background:#FFF0DC; color:#E5461A;">' + (u.role || '—') + '</span></td>' +
+          '<td><span class="status ' + (u.activo === false ? 'status-pendiente' : 'status-activo') + '">' + (u.activo === false ? 'Inactivo' : 'Activo') + '</span></td>' +
+          '<td style="white-space:nowrap;">' +
+            (esActual ? '—'
+              : '<button class="btn btn-small btn-secondary" onclick="cambiarRolUsuario(\'' + u.uid + '\')">Cambiar rol</button>') +
+          '</td></tr>';
+      }).join('');
+    } catch (e) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Error cargando usuarios: ' + e.message + '</td></tr>';
+    }
+  }
+
+  function openUsuarioModal() {
+    document.getElementById('usrNombre').value = '';
+    document.getElementById('usrEmail').value = '';
+    document.getElementById('usrPass').value = '';
+    document.getElementById('usrRol').value = 'chef';
+    document.getElementById('usuarioModal').classList.add('show');
+  }
+
+  function closeUsuarioModal() {
+    document.getElementById('usuarioModal').classList.remove('show');
+  }
+
+  async function saveUsuario() {
+    const nombre = document.getElementById('usrNombre').value.trim();
+    const email = document.getElementById('usrEmail').value.trim();
+    const pass = document.getElementById('usrPass').value;
+    const rol = document.getElementById('usrRol').value;
+
+    if (!nombre || !email || !pass) { alert('Todos los campos son obligatorios'); return; }
+    if (pass.length < 6) { alert('La contraseña debe tener al menos 6 caracteres'); return; }
+
+    try {
+      const cred = await window._fb.createUser(email, pass);
+      const uid = cred.user.uid;
+      await window._fb.setDoc(
+        window._fb.doc(window._fb.db, 'users', uid),
+        { nombre, email, role: rol, activo: true, creadoPor: window.currentUser.email, creadoEn: new Date().toISOString() }
+      );
+      alert('✓ Usuario creado. Comparte con ' + nombre + ':\nEmail: ' + email + '\nContraseña: ' + pass);
+      closeUsuarioModal();
+      renderUsuarios();
+    } catch (e) {
+      const msg = e.code === 'auth/email-already-in-use' ? 'Ese email ya está registrado'
+        : e.code === 'auth/invalid-email' ? 'Email inválido'
+        : e.code === 'auth/weak-password' ? 'Contraseña muy débil'
+        : e.message;
+      alert('Error: ' + msg);
+    }
+  }
+
+  async function cambiarRolUsuario(uid) {
+    const nuevoRol = prompt('Nuevo rol (admin / chef / domiciliario):');
+    if (!nuevoRol) return;
+    if (!['admin','chef','domiciliario'].includes(nuevoRol)) { alert('Rol no válido'); return; }
+    try {
+      const userRef = window._fb.doc(window._fb.db, 'users', uid);
+      const snap = await window._fb.getDoc(userRef);
+      if (!snap.exists()) { alert('Usuario no existe'); return; }
+      await window._fb.setDoc(userRef, { ...snap.data(), role: nuevoRol }, { merge: true });
+      alert('✓ Rol actualizado');
+      renderUsuarios();
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  // ===== BACKUP EXCEL =====
+  function exportBackup() {
+    const esc = (v) => '"' + String(v||'').replace(/"/g,'""') + '"';
+    const ahora = new Date();
+    const fechaHora = ahora.toLocaleDateString('es-CO') + ' ' + ahora.toLocaleTimeString('es-CO');
+
+    let csv = '';
+
+    // ===== HOJA 1: CLIENTES =====
+    csv += '=== CLIENTES === (Actualizado: ' + fechaHora + ')\n';
+    csv += '#,Nombre,Telefono,Direccion,Referencia,Barrio,Plan,Almuerzos Total,Almuerzos Usados,Almuerzos Restantes,Tipo Entrega,Estado,Kit,Fecha Inicio,Fecha Vence,Dias Programados,Notas\n';
+    clients.forEach((c, i) => {
+      const schedule = getClientSchedule(i);
+      const totalAlm = DIAS_PLAN[c.plan] || 5;
+      const usados = Object.keys(deliveries).filter(d => deliveries[d] && deliveries[d][c.nombre]).length;
+      const restantes = totalAlm - usados;
+      const vence = c.inicio ? calcVence(c.inicio, c.plan) : '';
+      const diasProg = schedule.join(' | ');
+      csv += (i+1) + ',' + esc(c.nombre) + ',' + esc(c.telefono) + ',' + esc(c.direccion) + ',' + esc(c.referencia) + ',' + esc(c.barrio) + ',' + esc(c.plan) + ',' + totalAlm + ',' + usados + ',' + restantes + ',' + esc(c.entrega) + ',' + esc(c.estado) + ',' + esc(c.kit) + ',' + esc(c.inicio) + ',' + esc(vence) + ',' + esc(diasProg) + ',' + esc(c.notas) + '\n';
+    });
+
+    // ===== HOJA 2: CALENDARIO POR CLIENTE =====
+    csv += '\n=== CALENDARIO DE ENTREGAS ===\n';
+    csv += 'Cliente,Plan,Dia Programado,Estado\n';
+    clients.forEach((c, i) => {
+      const schedule = getClientSchedule(i);
+      const cancelados = cancellations.filter(x => x.clientIdx === i).map(x => x.diaCancelado);
+      schedule.forEach(d => {
+        const entregado = deliveries[d] && deliveries[d][c.nombre];
+        let estado = 'Pendiente';
+        if (entregado) estado = 'Entregado';
+        if (cancelados.includes(d)) estado = 'Cancelado';
+        csv += esc(c.nombre) + ',' + esc(c.plan) + ',' + esc(d) + ',' + estado + '\n';
+      });
+    });
+
+    // ===== HOJA 3: CANCELACIONES =====
+    if (cancellations.length > 0) {
+      csv += '\n=== CANCELACIONES ===\n';
+      csv += 'Cliente,Fecha Solicitud,Dia Cancelado,Anticipacion (dias habiles),Estado,Reprogramado a,Motivo\n';
+      cancellations.forEach(x => {
+        csv += esc(x.cliente) + ',' + esc(x.fechaSolicitud) + ',' + esc(x.diaCancelado) + ',' + x.anticipacion + ',' + esc(x.estado) + ',' + esc(x.reprogramado) + ',' + esc(x.motivo||'') + '\n';
+      });
+    }
+
+    // ===== HOJA 4: PAGOS =====
+    csv += '\n=== PAGOS ===\n';
+    csv += 'Fecha,Cliente,Concepto,Monto,Metodo,Estado\n';
+    payments.forEach(p => {
+      csv += esc(p.fecha) + ',' + esc(p.cliente) + ',' + esc(p.concepto) + ',' + (p.monto||0) + ',' + esc(p.metodo) + ',' + esc(p.estado) + '\n';
+    });
+
+    // ===== HOJA 5: ENTREGAS DIARIAS =====
+    csv += '\n=== ENTREGAS DIARIAS ===\n';
+    csv += 'Fecha,Cliente,Entregado\n';
+    const diasOrdenados = Object.keys(deliveries).sort();
+    diasOrdenados.forEach(dia => {
+      Object.keys(deliveries[dia]).forEach(cliente => {
+        csv += esc(dia) + ',' + esc(cliente) + ',' + (deliveries[dia][cliente] ? 'Si' : 'No') + '\n';
+      });
+    });
+
+    // ===== HOJA 6: MENUS =====
+    if (menus.length > 0) {
+      csv += '\n=== MENUS SEMANALES ===\n';
+      menus.forEach(m => {
+        csv += 'Menu: ' + m.nombre + ' | Desde: ' + m.fecha + '\n';
+        csv += 'Dia,Nivel,Proteina,Guarnicion 1,Guarnicion 2,Sopa/Extra,Ensalada,Bebida\n';
+        m.dias.forEach(d => {
+          const proteina = d.proteina || d.seco || '';
+          csv += esc(d.dia) + ',' + esc(d.nivel) + ',' + esc(proteina) + ',' + esc(d.guarnicion1) + ',' + esc(d.guarnicion2) + ',' + esc(d.sopa) + ',' + esc(d.ensalada) + ',' + esc(d.bebida) + '\n';
+        });
+        csv += '\n';
+      });
+    }
+
+    // ===== RESUMEN =====
+    const activos = clients.filter(c => c.estado === 'Activo');
+    const sem = activos.filter(c => c.plan === 'Semanal').length;
+    const quin = activos.filter(c => c.plan === 'Quincenal').length;
+    const men = activos.filter(c => c.plan === 'Mensual').length;
+    const totalIngresos = payments.filter(p => p.estado === 'Pagado').reduce((s,p) => s + (p.monto||0), 0);
+
+    csv += '\n=== RESUMEN ===\n';
+    csv += 'Total clientes,' + clients.length + '\n';
+    csv += 'Clientes activos,' + activos.length + '\n';
+    csv += 'Plan semanal,' + sem + '\n';
+    csv += 'Plan quincenal,' + quin + '\n';
+    csv += 'Plan mensual,' + men + '\n';
+    csv += 'Total ingresos pagados,' + totalIngresos + '\n';
+    csv += 'Ultima actualizacion,' + fechaHora + '\n';
+
+    // Download — siempre el mismo nombre para que reemplace
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ENCOCADOS-CRM.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    alert('CRM exportado como ENCOCADOS-CRM.csv\nSiempre se descarga con el mismo nombre para que se actualice en vez de crear archivos nuevos.');
+  }
+
+  // ===== ALMANAQUE =====
+  let almMonth = 3; // abril
+  let almYear = 2026;
+
+  function almPrevMonth() { almMonth--; if (almMonth < 0) { almMonth = 11; almYear--; } renderAlmanaque(); }
+  function almNextMonth() { almMonth++; if (almMonth > 11) { almMonth = 0; almYear++; } renderAlmanaque(); }
+
+  function renderAlmanaque() {
+    const container = document.getElementById('almCalendar');
+    const statsEl = document.getElementById('almStats');
+    const labelEl = document.getElementById('almMonthLabel');
+    if (!container) return;
+
+    const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const dayNames = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo'];
+    labelEl.textContent = monthNames[almMonth] + ' ' + almYear;
+
+    const firstDay = new Date(almYear, almMonth, 1);
+    const lastDay = new Date(almYear, almMonth + 1, 0);
+    const totalDays = lastDay.getDate();
+
+    // Build map: date -> { manana: [], noche: [] }
+    const dayMap = {};
+    for (let d = 1; d <= totalDays; d++) {
+      const date = new Date(almYear, almMonth, d);
+      const iso = date.toISOString().split('T')[0];
+      dayMap[iso] = { manana: [], noche: [], date, day: d };
+    }
+
+    let totalEntregas = 0;
+    let totalManana = 0;
+    let totalNoche = 0;
+
+    clients.forEach((c, idx) => {
+      if (c.estado === 'Retirado') return;
+      const schedule = getClientSchedule(idx);
+      schedule.forEach(dateStr => {
+        if (dayMap[dateStr]) {
+          const tipo = (c.entrega || '').includes('noche') || (c.entrega || '').includes('nocturna') ? 'noche' : 'manana';
+          dayMap[dateStr][tipo].push(c.nombre);
+          totalEntregas++;
+          if (tipo === 'manana') totalManana++; else totalNoche++;
+        }
+      });
+    });
+
+    // Stats
+    statsEl.innerHTML =
+      '<div class="stat-card menta" style="flex:1;"><div class="stat-label">Total entregas mes</div><div class="stat-value">' + totalEntregas + '</div></div>' +
+      '<div class="stat-card terra" style="flex:1;"><div class="stat-label">Entregas manana</div><div class="stat-value">' + totalManana + '</div></div>' +
+      '<div class="stat-card dorado" style="flex:1;"><div class="stat-label">Entregas noche</div><div class="stat-value">' + totalNoche + '</div></div>' +
+      '<div class="stat-card verde" style="flex:1;"><div class="stat-label">Clientes activos</div><div class="stat-value">' + clients.filter(c => c.estado !== 'Retirado').length + '</div></div>';
+
+    // Calendar grid
+    let html = '<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;">';
+
+    // Headers
+    dayNames.forEach(n => {
+      html += '<div style="font-size:11px;font-weight:700;text-align:center;padding:8px;color:var(--gris);text-transform:uppercase;letter-spacing:1px;">' + n.substring(0,3) + '</div>';
+    });
+
+    // Empty cells for first week
+    let dow = firstDay.getDay();
+    dow = dow === 0 ? 6 : dow - 1;
+    for (let i = 0; i < dow; i++) {
+      html += '<div></div>';
+    }
+
+    // Days
+    for (let d = 1; d <= totalDays; d++) {
+      const date = new Date(almYear, almMonth, d);
+      const iso = date.toISOString().split('T')[0];
+      const habil = esDiaHabil(date);
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+      const isFestivo = FESTIVOS.includes(iso);
+      const info = dayMap[iso];
+      const hasClients = info.manana.length > 0 || info.noche.length > 0;
+      const totalDay = info.manana.length + info.noche.length;
+
+      if (!habil) {
+        html += '<div style="background:#f9f6f1;border:1px solid rgba(0,0,0,0.04);border-radius:12px;padding:10px;min-height:100px;opacity:0.4;">';
+        html += '<div style="font-size:13px;font-weight:700;color:#ccc;">' + d + '</div>';
+        if (isFestivo) html += '<div style="font-size:9px;color:#ccc;margin-top:4px;">Festivo</div>';
+        else html += '<div style="font-size:9px;color:#ccc;margin-top:4px;">' + (date.getDay() === 6 ? 'Sabado' : 'Domingo') + '</div>';
+        html += '</div>';
+      } else {
+        const borderColor = hasClients ? 'rgba(229,70,26,0.2)' : 'rgba(0,0,0,0.06)';
+        const bg = hasClients ? '#FFFFFF' : '#FEFCF8';
+
+        html += '<div style="background:' + bg + ';border:1px solid ' + borderColor + ';border-radius:12px;padding:10px;min-height:100px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+        html += '<span style="font-size:15px;font-weight:700;color:' + (hasClients ? 'var(--menta)' : '#bbb') + ';">' + d + '</span>';
+        if (totalDay > 0) html += '<span style="background:var(--menta);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;">' + totalDay + '</span>';
+        html += '</div>';
+
+        if (info.manana.length > 0) {
+          html += '<div style="margin-bottom:4px;">';
+          html += '<div style="font-size:8px;font-weight:700;color:var(--menta);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Manana</div>';
+          info.manana.forEach(nombre => {
+            const firstName = nombre.split(' ')[0];
+            html += '<div style="font-size:10px;color:#555;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.03);">' + firstName + '</div>';
+          });
+          html += '</div>';
+        }
+
+        if (info.noche.length > 0) {
+          html += '<div>';
+          html += '<div style="font-size:8px;font-weight:700;color:var(--morado);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Noche</div>';
+          info.noche.forEach(nombre => {
+            const firstName = nombre.split(' ')[0];
+            html += '<div style="font-size:10px;color:#555;padding:2px 0;border-bottom:1px solid rgba(0,0,0,0.03);">' + firstName + '</div>';
+          });
+          html += '</div>';
+        }
+
+        if (!hasClients) {
+          html += '<div style="font-size:10px;color:#ddd;margin-top:8px;text-align:center;">Sin entregas</div>';
+        }
+
+        html += '</div>';
+      }
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // ===== CANCEL DAY MODAL =====
+  function openCancelModal(clientIdx) {
+    const schedule = getClientSchedule(clientIdx);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const futureDays = schedule.filter(d => {
+      const date = new Date(d);
+      date.setHours(0,0,0,0);
+      return date > today;
+    });
+
+    if (futureDays.length === 0) {
+      alert('No hay dias futuros programados para cancelar');
+      return;
+    }
+
+    let html = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;max-height:85vh;overflow-y:auto;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,0.15);">';
+    html += '<h3 style="font-family:Lilita One;font-size:20px;margin-bottom:4px;">Cancelar dia — ' + clients[clientIdx].nombre + '</h3>';
+    html += '<p style="font-size:11px;color:#999;margin-bottom:16px;">Minimo 2 dias habiles de anticipacion. El almuerzo no se pierde, se reprograma.</p>';
+
+    futureDays.forEach(d => {
+      const date = new Date(d);
+      const habiles = diasHabilesEntre(today, date);
+      const canCancel = habiles >= 2;
+      const dayName = date.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short' });
+
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid ' + (canCancel ? '#e0d5c5' : '#f0f0f0') + ';border-radius:8px;margin-bottom:6px;' + (!canCancel ? 'opacity:0.4;' : '') + '">';
+      html += '<span style="font-size:13px;font-weight:600;">' + dayName + '</span>';
+      html += '<span style="font-size:10px;color:#999;">' + habiles + ' dias hab.</span>';
+      if (canCancel) {
+        html += '<button class="btn btn-danger btn-small" onclick="if(confirm(\'Cancelar entrega del ' + dayName + '?\')){requestCancelDay(' + clientIdx + ',\'' + d + '\');closeCancelModal();}">Cancelar</button>';
+      } else {
+        html += '<span style="font-size:10px;color:#F44336;font-weight:700;">Muy tarde</span>';
+      }
+      html += '</div>';
+    });
+
+    html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;">';
+    html += '<span style="font-size:11px;color:#999;">No quieres cancelar ningun dia?</span>';
+    html += '<button class="btn btn-secondary" onclick="closeCancelModal()">Dejar todo igual</button>';
+    html += '</div>';
+    html += '</div>';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cancelModalOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+  }
+
+  function closeCancelModal() {
+    const el = document.getElementById('cancelModalOverlay');
+    if (el) el.remove();
+  }
+
+  // Update calendar when plan changes
+  const planSelect = document.getElementById('fPlan');
+  if (planSelect) {
+    planSelect.addEventListener('change', function() {
+      renderCalendar();
+    });
+  }
+
+  // INIT
+  renderAll();
+</script>
+
+</body>
+</html>
