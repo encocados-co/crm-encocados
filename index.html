@@ -1727,13 +1727,14 @@
     }
     try {
       showSync('syncing', 'Guardando...');
+      const payload = JSON.parse(JSON.stringify({
+        clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos,
+        updatedAt: new Date().toISOString(),
+        updatedBy: window.currentUser.email
+      }));
       await window._fb.setDoc(
         window._fb.doc(window._fb.db, 'crm', 'main'),
-        {
-          clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos,
-          updatedAt: new Date().toISOString(),
-          updatedBy: window.currentUser.email
-        }
+        payload
       );
     } catch (e) {
       console.error('Error guardando:', e);
