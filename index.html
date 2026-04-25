@@ -365,6 +365,75 @@
     .stats-grid { grid-template-columns: 1fr 1fr; }
   }
 
+  /* MOBILE */
+  @media (max-width: 640px) {
+    /* Sidebar se vuelve topbar horizontal */
+    .sidebar {
+      width: 100%; height: auto; bottom: auto;
+      flex-direction: row; padding: 8px 6px;
+      overflow-x: auto; overflow-y: hidden;
+      border-right: none; border-bottom: 1px solid rgba(0,0,0,0.08);
+      gap: 4px;
+    }
+    .sidebar-logo, .sidebar-sub, .sidebar-footer, .user-badge { display: none; }
+    .nav-item span:not(.icon):not(.badge) { display: none; }
+    .nav-item {
+      flex: 0 0 auto; padding: 10px 12px; margin-bottom: 0;
+      min-width: 44px; justify-content: center;
+    }
+    .nav-item .badge {
+      position: absolute; top: 2px; right: 2px;
+      margin-left: 0; font-size: 9px; padding: 1px 5px;
+    }
+    .nav-item { position: relative; }
+
+    /* Main ocupa todo el ancho debajo de la topbar */
+    .main { margin-left: 0; margin-top: 64px; padding: 14px; }
+
+    /* Page header en columna */
+    .page-header {
+      flex-direction: column; align-items: stretch;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .page-title { font-size: 22px; }
+
+    /* Stats: 2 columnas */
+    .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-value { font-size: 22px; }
+    .stat-label { font-size: 9px; }
+
+    /* Forms en 1 columna */
+    .form-row { grid-template-columns: 1fr !important; }
+
+    /* Modal casi pantalla completa */
+    .modal-overlay { padding: 8px; align-items: flex-start; }
+    .modal {
+      width: 100% !important; max-width: 100% !important;
+      padding: 20px 16px; border-radius: 14px;
+      margin-top: 10px; max-height: calc(100vh - 20px);
+    }
+    .modal-title { font-size: 18px; }
+
+    /* Tablas con scroll horizontal */
+    .table-container { overflow-x: auto; border-radius: 10px; }
+    .table-container table { min-width: 600px; }
+    .table-header {
+      flex-direction: column; align-items: stretch;
+      gap: 8px; padding: 12px;
+    }
+    th, td { padding: 8px 10px; font-size: 12px; }
+    th { font-size: 9px; }
+
+    /* Botones más cómodos para touch */
+    .btn { padding: 12px 18px; font-size: 13px; }
+    .btn-small { padding: 8px 14px; font-size: 11px; }
+
+    /* Filtros con scroll horizontal si son muchos */
+    .table-filters { overflow-x: auto; flex-wrap: nowrap; }
+    .filter-btn { flex-shrink: 0; }
+  }
+
   /* LOGIN SCREEN */
   body.not-logged-in .sidebar,
   body.not-logged-in .main { display: none !important; }
