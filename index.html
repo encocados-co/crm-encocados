@@ -506,6 +506,10 @@
     <span class="icon">📅</span>
     <span>Almanaque</span>
   </div>
+  <div class="nav-item" onclick="showPage('eventos')">
+    <span class="icon">🎉</span>
+    <span>Eventos</span>
+  </div>
   <div class="nav-item" onclick="showPage('recetario')">
     <span class="icon">📖</span>
     <span>Recetario</span>
@@ -649,14 +653,11 @@
   <div class="page" id="page-entregas">
     <div class="page-header">
       <div class="page-title">Entregas Diarias</div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <select class="form-input" style="width:auto;" id="entregaDia" onchange="renderEntregas()">
-          <option value="lunes">Lunes 20 — Lomo cerdo (Simple)</option>
-          <option value="martes">Martes 21 — Ceviche (Intermedio)</option>
-          <option value="miercoles">Miercoles 22 — Pasta (Intermedio)</option>
-          <option value="jueves">Jueves 23 — Lasagna (Premium)</option>
-          <option value="viernes">Viernes 24 — Costilla (Premium)</option>
-        </select>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-small" onclick="navEntregaFecha(-1)">◀</button>
+        <input type="date" class="form-input" style="width:auto;" id="entregaFecha" onchange="renderEntregas()">
+        <button class="btn btn-secondary btn-small" onclick="navEntregaFecha(1)">▶</button>
+        <button class="btn btn-secondary btn-small" onclick="irHoyEntregas()">Hoy</button>
       </div>
     </div>
     <div id="entregasContent"></div>
@@ -849,6 +850,43 @@
 
     <div id="almStats" style="display:flex; gap:14px; margin-bottom:20px;"></div>
     <div id="almCalendar"></div>
+  </div>
+
+  <!-- ===== EVENTOS / ALMUERZOS ESPECIALES ===== -->
+  <div class="page" id="page-eventos">
+    <div class="page-header">
+      <div class="page-title">Eventos / Almuerzos Especiales</div>
+      <button class="btn btn-primary" onclick="openEventoModal()">+ Nuevo Evento</button>
+    </div>
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      Registra ventas de almuerzos para fechas especiales (Día de Madres, Padres, etc.). Los pedidos pagados se suman automáticamente al ingreso del negocio. Las entregas aparecen en la pestaña Ruta del día del evento.
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      <div class="stat-card menta">
+        <div class="stat-label">Eventos activos</div>
+        <div class="stat-value" id="ev-total">0</div>
+      </div>
+      <div class="stat-card terra">
+        <div class="stat-label">Platos vendidos</div>
+        <div class="stat-value" id="ev-platos">0</div>
+      </div>
+      <div class="stat-card verde">
+        <div class="stat-label">Ingresos cobrados</div>
+        <div class="stat-value" id="ev-ingresos">$0</div>
+      </div>
+      <div class="stat-card dorado">
+        <div class="stat-label">Por cobrar</div>
+        <div class="stat-value" id="ev-pendiente">$0</div>
+      </div>
+    </div>
+
+    <div id="eventosContent"></div>
+    <div class="empty-state" id="emptyEventos" style="display:none;">
+      <div class="icon">🎉</div>
+      <h3>Sin eventos</h3>
+      <p>Crea tu primer evento (ej: Día de las Madres)</p>
+    </div>
   </div>
 
   <!-- ===== PRODUCTOS ===== -->
@@ -1524,6 +1562,122 @@
   </div>
 </div>
 
+<!-- MODAL EVENTO -->
+<div class="modal-overlay" id="eventoModal">
+  <div class="modal">
+    <div class="modal-title" id="eventoModalTitle">Nuevo Evento</div>
+    <input type="hidden" id="eventoEditId" value="">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre del evento</label>
+        <input type="text" class="form-input" id="evNombre" placeholder="Ej: Día de las Madres">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha del evento</label>
+        <input type="date" class="form-input" id="evFecha">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Plato</label>
+        <input type="text" class="form-input" id="evPlato" placeholder="Ej: Almuerzo especial Día de las Madres">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Precio por plato</label>
+        <input type="number" class="form-input" id="evPrecio" placeholder="55000">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descripción / Detalles del plato (opcional)</label>
+      <input type="text" class="form-input" id="evDescripcion" placeholder="Ej: Lomo en salsa de vino, ensalada del chef, jugo natural y postre">
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeEventoModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEvento()">Guardar Evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PEDIDO DE EVENTO -->
+<div class="modal-overlay" id="pedidoEventoModal">
+  <div class="modal">
+    <div class="modal-title" id="pedidoModalTitle">Nuevo Pedido</div>
+    <input type="hidden" id="pedidoEventoId" value="">
+    <input type="hidden" id="pedidoEditId" value="">
+
+    <div style="background:#FFF0DC; padding:10px; border-radius:8px; font-size:12px; color:#555; margin-bottom:12px;" id="pedidoContextoEvento"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Nombre del cliente</label>
+        <input type="text" class="form-input" id="pedNombre" placeholder="Ej: Juana Pérez">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Teléfono</label>
+        <input type="text" class="form-input" id="pedTelefono" placeholder="300 123 4567">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Cantidad de platos</label>
+        <input type="number" class="form-input" id="pedCantidad" value="1" min="1" onchange="actualizarTotalPedido()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total</label>
+        <input type="text" class="form-input" id="pedTotal" readonly style="background:#f5f5f5;">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Estado del pago</label>
+        <select class="form-input" id="pedEstado">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pagado">Pagado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de entrega</label>
+        <select class="form-input" id="pedTipoEntrega">
+          <option value="Domicilio">Domicilio</option>
+          <option value="Recoge en local">Recoge en local</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Dirección de entrega (si es domicilio)</label>
+      <input type="text" class="form-input" id="pedDireccion" placeholder="Ej: Calle 10 #5-30, Laureles">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Barrio</label>
+        <input type="text" class="form-input" id="pedBarrio" placeholder="Ej: Laureles">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hora preferida (opcional)</label>
+        <input type="text" class="form-input" id="pedHora" placeholder="Ej: 12:30 pm">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas / Observaciones</label>
+      <input type="text" class="form-input" id="pedNotas" placeholder="Ej: Sin cebolla, alergia a la lactosa">
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closePedidoModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePedido()">Guardar Pedido</button>
+    </div>
+  </div>
+</div>
+
 <!-- FIREBASE MODULE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
@@ -1566,6 +1720,7 @@
   let compras = [];
   let proveedores = [];
   let productos = [];
+  let eventos = [];
   let usuariosLocales = [];
 
   // currentUser se define al hacer login
@@ -1676,8 +1831,10 @@
         compras = d.compras || [];
         proveedores = d.proveedores || [];
         productos = d.productos || [];
+        eventos = d.eventos || [];
+        migrarEntregasAntiguas();
       } else {
-        clients = []; payments = []; deliveries = {}; menus = []; recetas = []; cocasLog = []; compras = []; proveedores = []; productos = [];
+        clients = []; payments = []; deliveries = {}; menus = []; recetas = []; cocasLog = []; compras = []; proveedores = []; productos = []; eventos = [];
       }
       if (typeof renderAll === 'function') renderAll();
     }, (err) => {
@@ -1691,7 +1848,7 @@
     if (role === 'admin') return; // ve todo
 
     const permisos = {
-      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores'],
+      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores', 'eventos'],
       domiciliario: ['dashboard', 'ruta', 'cocas', 'entregas']
     };
     const permitidas = permisos[role] || ['dashboard'];
@@ -1728,7 +1885,7 @@
     try {
       showSync('syncing', 'Guardando...');
       const payload = JSON.parse(JSON.stringify({
-        clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos,
+        clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos, eventos,
         updatedAt: new Date().toISOString(),
         updatedBy: window.currentUser.email
       }));
@@ -1815,6 +1972,7 @@
     renderFinanciero();
     renderCocas();
     renderAlmanaque();
+    if (typeof renderEventos === 'function') renderEventos();
     if (typeof renderProductos === 'function') renderProductos();
     if (typeof renderProveedores === 'function') renderProveedores();
     if (typeof renderRuta === 'function') renderRuta();
@@ -1882,6 +2040,12 @@
 
     document.getElementById('dash-eco').textContent = activos.length * 5 * 4;
 
+    // Entregas de hoy (usa fecha real, no la pestaña Entregas)
+    const hoy = hoyISO();
+    const delivHoy = deliveries[hoy] || {};
+    const doneHoy = Object.keys(delivHoy).filter(k => !k.startsWith('_') && delivHoy[k] === true).length;
+    document.getElementById('dash-entregas').textContent = doneHoy + '/' + activos.length;
+
     // Menu
     let menuHtml = '';
     MENU.forEach(m => {
@@ -1903,25 +2067,152 @@
     document.getElementById('dash-pagos').innerHTML = pagosHtml || '<p style="color:var(--gris); font-size:12px; text-align:center; padding:20px;">Sin pagos</p>';
   }
 
+  // Migracion una sola vez: claves antiguas "lunes"/"martes"/etc -> fechas reales de la semana 20-24 abril 2026
+  function migrarEntregasAntiguas() {
+    const mapa = {
+      lunes:    '2026-04-20',
+      martes:   '2026-04-21',
+      miercoles:'2026-04-22',
+      jueves:   '2026-04-23',
+      viernes:  '2026-04-24'
+    };
+    let huboCambios = false;
+    Object.keys(mapa).forEach(diaViejo => {
+      if (deliveries[diaViejo] && typeof deliveries[diaViejo] === 'object') {
+        const fechaNueva = mapa[diaViejo];
+        deliveries[fechaNueva] = Object.assign({}, deliveries[fechaNueva] || {}, deliveries[diaViejo]);
+        delete deliveries[diaViejo];
+        huboCambios = true;
+      }
+    });
+    if (huboCambios) { console.log('Migracion entregas: claves dia -> fecha aplicada'); save(); }
+  }
+
+  // Festivos Colombia 2026-2027 (actualizar para años siguientes)
+  const FESTIVOS_COLOMBIA = [
+    '2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01',
+    '2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-20','2026-08-07',
+    '2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25',
+    '2027-01-01','2027-01-11','2027-03-22','2027-03-25','2027-03-26','2027-05-01',
+    '2027-05-10','2027-05-31','2027-06-07','2027-07-05','2027-07-20','2027-08-07',
+    '2027-08-16','2027-10-18','2027-11-01','2027-11-15','2027-12-08','2027-12-25'
+  ];
+
+  function parseFechaLocal(yyyymmdd) {
+    const [y,m,d] = yyyymmdd.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+
+  function hoyISO() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + dd;
+  }
+
+  function diaSemanaNombre(fechaISO) {
+    // devuelve 'Lunes'|'Martes'|'Miercoles'|'Jueves'|'Viernes' o null si es fin de semana
+    const dow = parseFechaLocal(fechaISO).getDay();
+    return ({1:'Lunes',2:'Martes',3:'Miercoles',4:'Jueves',5:'Viernes'})[dow] || null;
+  }
+
+  function esFestivo(fechaISO) { return FESTIVOS_COLOMBIA.includes(fechaISO); }
+
+  function findMenuForDate(fechaISO) {
+    if (!menus || menus.length === 0) return null;
+    const target = parseFechaLocal(fechaISO).getTime();
+    // Busca el menu con fecha de inicio mas reciente que sea <= fecha target y que caiga dentro de 6 dias
+    let best = null;
+    menus.forEach(m => {
+      if (!m.fecha) return;
+      const inicio = parseFechaLocal(m.fecha).getTime();
+      const diffDias = (target - inicio) / (1000*60*60*24);
+      if (diffDias >= 0 && diffDias <= 6) {
+        if (!best || inicio > parseFechaLocal(best.fecha).getTime()) best = m;
+      }
+    });
+    return best;
+  }
+
+  function navEntregaFecha(delta) {
+    const el = document.getElementById('entregaFecha');
+    if (!el.value) el.value = hoyISO();
+    const d = parseFechaLocal(el.value);
+    d.setDate(d.getDate() + delta);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    el.value = y + '-' + m + '-' + dd;
+    renderEntregas();
+  }
+
+  function irHoyEntregas() {
+    document.getElementById('entregaFecha').value = hoyISO();
+    renderEntregas();
+  }
+
   function renderEntregas() {
-    const diaSelect = document.getElementById('entregaDia').value;
-    const menuDia = MENU.find(m => m.dia === diaSelect);
+    const fechaEl = document.getElementById('entregaFecha');
+    if (!fechaEl.value) fechaEl.value = hoyISO();
+    const fecha = fechaEl.value;
+    const container = document.getElementById('entregasContent');
+
+    const diaNombre = diaSemanaNombre(fecha);
+    const fechaLegible = parseFechaLocal(fecha).toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    // Fin de semana
+    if (!diaNombre) {
+      container.innerHTML = '<div class="entrega-day"><div class="entrega-day-body" style="text-align:center; padding:40px 20px;">' +
+        '<div style="font-size:42px; margin-bottom:8px;">🚫</div>' +
+        '<h3 style="color:var(--gris); text-transform:capitalize;">' + fechaLegible + '</h3>' +
+        '<p style="color:var(--gris); font-size:13px;">No hay entregas los fines de semana.</p></div></div>';
+      document.getElementById('dash-entregas').textContent = '0/0';
+      return;
+    }
+
+    // Festivo
+    if (esFestivo(fecha)) {
+      container.innerHTML = '<div class="entrega-day"><div class="entrega-day-body" style="text-align:center; padding:40px 20px;">' +
+        '<div style="font-size:42px; margin-bottom:8px;">🎉</div>' +
+        '<h3 style="color:var(--gris); text-transform:capitalize;">' + fechaLegible + '</h3>' +
+        '<p style="color:var(--gris); font-size:13px;">Festivo — sin entregas.</p></div></div>';
+      document.getElementById('dash-entregas').textContent = '0/0';
+      return;
+    }
+
+    // Buscar menu semanal para esta fecha
+    const menuSem = findMenuForDate(fecha);
+    const menuDia = menuSem ? menuSem.dias.find(d => d.dia === diaNombre) : null;
+
     const activos = clients.filter(c => c.estado === 'Activo' || c.estado === 'Por confirmar');
-
-    const nivelClass = menuDia.nivel === 'Simple' ? 'nivel-simple' : menuDia.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
-
-    const delivKey = diaSelect;
+    const delivKey = fecha;
     if (!deliveries[delivKey]) deliveries[delivKey] = {};
 
-    // Separate by delivery type
     const domDia = activos.filter(c => c.entrega === 'Domicilio dia');
     const nocturna = activos.filter(c => c.entrega === 'Entrega nocturna');
 
-    let html = '<div class="entrega-day"><div class="entrega-day-header" style="background:var(--card);">' +
-      '<h3>' + menuDia.label + ' <span class="nivel-badge ' + nivelClass + '">' + menuDia.nivel + '</span></h3>' +
-      '<div style="font-size:11px; color:var(--gris);">' + menuDia.plato + ' | ' + menuDia.sopa + ' | ' + menuDia.ensalada + ' | ' + menuDia.bebida + '</div></div>';
+    // Header con menu (o aviso si no hay)
+    let headerHtml;
+    if (menuDia) {
+      const nivelClass = menuDia.nivel === 'Simple' ? 'nivel-simple' : menuDia.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+      const platoParts = [];
+      if (menuDia.proteina) platoParts.push(menuDia.proteina);
+      if (menuDia.guarnicion1) platoParts.push(menuDia.guarnicion1);
+      if (menuDia.guarnicion2) platoParts.push(menuDia.guarnicion2);
+      const platoFuerte = platoParts.join(' + ') || '—';
+      const detalle = [platoFuerte, menuDia.sopa, menuDia.ensalada, menuDia.bebida].filter(x => x).join(' | ');
+      headerHtml = '<div class="entrega-day-header" style="background:var(--card);">' +
+        '<h3 style="text-transform:capitalize;">' + fechaLegible + ' <span class="nivel-badge ' + nivelClass + '">' + menuDia.nivel + '</span></h3>' +
+        '<div style="font-size:11px; color:var(--gris);">' + detalle + '</div>' +
+        '<div style="font-size:10px; color:var(--gris); margin-top:4px;">Menu: ' + (menuSem.nombre || '—') + '</div></div>';
+    } else {
+      headerHtml = '<div class="entrega-day-header" style="background:var(--card);">' +
+        '<h3 style="text-transform:capitalize;">' + fechaLegible + '</h3>' +
+        '<div style="font-size:11px; color:#E5461A;">⚠️ No hay menu semanal creado para esta fecha. Ve a la pestaña Menus y crea uno.</div></div>';
+    }
 
-    // Domicilio dia
+    let html = '<div class="entrega-day">' + headerHtml;
     html += '<div class="entrega-day-body">';
     html += '<div style="font-size:11px; font-weight:700; color:var(--azul); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">☀️ Domicilio dia — Mediodia</div>';
 
@@ -1930,15 +2221,15 @@
     } else {
       domDia.forEach(c => {
         const checked = deliveries[delivKey][c.nombre] || false;
+        const nombreEsc = c.nombre.replace(/'/g, "\\'");
         html += '<div class="entrega-item">' +
-          '<div class="entrega-check ' + (checked ? 'checked' : '') + '" onclick="toggleDelivery(\'' + delivKey + '\',\'' + c.nombre + '\')">' + (checked ? '✓' : '') + '</div>' +
+          '<div class="entrega-check ' + (checked ? 'checked' : '') + '" onclick="toggleDelivery(\'' + delivKey + '\',\'' + nombreEsc + '\')">' + (checked ? '✓' : '') + '</div>' +
           '<span class="entrega-name">' + c.nombre + '</span>' +
           '<span class="entrega-meta">' + (c.barrio || '') + '</span>' +
           '<span class="delivery-type delivery-dia">Mediodia</span></div>';
       });
     }
 
-    // Nocturna
     html += '<div style="font-size:11px; font-weight:700; color:var(--morado); margin:16px 0 8px; text-transform:uppercase; letter-spacing:1px;">🌙 Entrega nocturna — Dia anterior</div>';
 
     if (nocturna.length === 0) {
@@ -1946,8 +2237,9 @@
     } else {
       nocturna.forEach(c => {
         const checked = deliveries[delivKey][c.nombre] || false;
+        const nombreEsc = c.nombre.replace(/'/g, "\\'");
         html += '<div class="entrega-item">' +
-          '<div class="entrega-check ' + (checked ? 'checked' : '') + '" onclick="toggleDelivery(\'' + delivKey + '\',\'' + c.nombre + '\')">' + (checked ? '✓' : '') + '</div>' +
+          '<div class="entrega-check ' + (checked ? 'checked' : '') + '" onclick="toggleDelivery(\'' + delivKey + '\',\'' + nombreEsc + '\')">' + (checked ? '✓' : '') + '</div>' +
           '<span class="entrega-name">' + c.nombre + '</span>' +
           '<span class="entrega-meta">' + (c.barrio || '') + '</span>' +
           '<span class="delivery-type delivery-noche">Noche anterior</span></div>';
@@ -1955,12 +2247,14 @@
     }
 
     html += '</div></div>';
-    document.getElementById('entregasContent').innerHTML = html;
+    container.innerHTML = html;
 
-    // Update dashboard
-    const total = activos.length;
-    const done = Object.values(deliveries[delivKey] || {}).filter(v => v).length;
-    document.getElementById('dash-entregas').textContent = done + '/' + total;
+    // Dashboard: entregas del dia actual seleccionado (si es hoy)
+    if (fecha === hoyISO()) {
+      const total = activos.length;
+      const done = Object.values(deliveries[delivKey] || {}).filter(v => v === true).length;
+      document.getElementById('dash-entregas').textContent = done + '/' + total;
+    }
   }
 
   function renderPagos() {
@@ -3165,14 +3459,310 @@
     renderProveedores();
   }
 
+  // ===== EVENTOS / ALMUERZOS ESPECIALES =====
+  function genId(prefix) { return prefix + '_' + Date.now() + '_' + Math.floor(Math.random()*10000); }
+
+  function openEventoModal(eventoId) {
+    const ev = eventoId ? eventos.find(e => e.id === eventoId) : null;
+    document.getElementById('eventoModalTitle').textContent = ev ? 'Editar Evento' : 'Nuevo Evento';
+    document.getElementById('eventoEditId').value = eventoId || '';
+    document.getElementById('evNombre').value = ev ? ev.nombre : '';
+    document.getElementById('evFecha').value = ev ? ev.fecha : '';
+    document.getElementById('evPlato').value = ev ? ev.plato : '';
+    document.getElementById('evPrecio').value = ev ? ev.precio : '';
+    document.getElementById('evDescripcion').value = ev ? (ev.descripcion || '') : '';
+    document.getElementById('eventoModal').classList.add('show');
+  }
+
+  function closeEventoModal() { document.getElementById('eventoModal').classList.remove('show'); }
+
+  function saveEvento() {
+    const nombre = document.getElementById('evNombre').value.trim();
+    const fecha = document.getElementById('evFecha').value;
+    const plato = document.getElementById('evPlato').value.trim();
+    const precio = parseInt(document.getElementById('evPrecio').value) || 0;
+    if (!nombre || !fecha || !plato || !precio) { alert('Completa nombre, fecha, plato y precio.'); return; }
+
+    const editId = document.getElementById('eventoEditId').value;
+    if (editId) {
+      const idx = eventos.findIndex(e => e.id === editId);
+      if (idx >= 0) {
+        eventos[idx].nombre = nombre;
+        eventos[idx].fecha = fecha;
+        eventos[idx].plato = plato;
+        eventos[idx].precio = precio;
+        eventos[idx].descripcion = document.getElementById('evDescripcion').value.trim();
+      }
+    } else {
+      eventos.push({
+        id: genId('ev'),
+        nombre, fecha, plato, precio,
+        descripcion: document.getElementById('evDescripcion').value.trim(),
+        creado: new Date().toLocaleDateString('es-CO'),
+        pedidos: []
+      });
+    }
+    save(); closeEventoModal(); renderAll();
+  }
+
+  function deleteEvento(eventoId) {
+    const ev = eventos.find(e => e.id === eventoId);
+    if (!ev) return;
+    const totPed = (ev.pedidos || []).length;
+    const msg = totPed > 0
+      ? 'Este evento tiene ' + totPed + ' pedido(s). Si lo eliminas se borraran tambien y los pagos asociados. Continuar?'
+      : 'Eliminar evento "' + ev.nombre + '"?';
+    if (!confirm(msg)) return;
+    // Borrar pagos vinculados
+    (ev.pedidos || []).forEach(p => { if (p.pagoRef) eliminarPagoEvento(p.pagoRef); });
+    eventos = eventos.filter(e => e.id !== eventoId);
+    save(); renderAll();
+  }
+
+  function actualizarTotalPedido() {
+    const eventoId = document.getElementById('pedidoEventoId').value;
+    const ev = eventos.find(e => e.id === eventoId);
+    if (!ev) return;
+    const cant = parseInt(document.getElementById('pedCantidad').value) || 0;
+    document.getElementById('pedTotal').value = '$' + (cant * ev.precio).toLocaleString();
+  }
+
+  function openPedidoModal(eventoId, pedidoId) {
+    const ev = eventos.find(e => e.id === eventoId);
+    if (!ev) return;
+    document.getElementById('pedidoEventoId').value = eventoId;
+    document.getElementById('pedidoEditId').value = pedidoId || '';
+    document.getElementById('pedidoModalTitle').textContent = pedidoId ? 'Editar Pedido' : 'Nuevo Pedido';
+    document.getElementById('pedidoContextoEvento').innerHTML =
+      '<strong>' + ev.nombre + '</strong> · ' + ev.fecha + ' · ' + ev.plato + ' · $' + ev.precio.toLocaleString() + ' c/u';
+
+    const ped = pedidoId ? (ev.pedidos || []).find(p => p.id === pedidoId) : null;
+    document.getElementById('pedNombre').value = ped ? ped.cliente : '';
+    document.getElementById('pedTelefono').value = ped ? (ped.telefono || '') : '';
+    document.getElementById('pedCantidad').value = ped ? ped.cantidad : 1;
+    document.getElementById('pedEstado').value = ped ? ped.estado : 'Pendiente';
+    document.getElementById('pedTipoEntrega').value = ped ? (ped.tipoEntrega || 'Domicilio') : 'Domicilio';
+    document.getElementById('pedDireccion').value = ped ? (ped.direccion || '') : '';
+    document.getElementById('pedBarrio').value = ped ? (ped.barrio || '') : '';
+    document.getElementById('pedHora').value = ped ? (ped.hora || '') : '';
+    document.getElementById('pedNotas').value = ped ? (ped.notas || '') : '';
+    actualizarTotalPedido();
+    document.getElementById('pedidoEventoModal').classList.add('show');
+  }
+
+  function closePedidoModal() { document.getElementById('pedidoEventoModal').classList.remove('show'); }
+
+  function savePedido() {
+    const eventoId = document.getElementById('pedidoEventoId').value;
+    const editId = document.getElementById('pedidoEditId').value;
+    const ev = eventos.find(e => e.id === eventoId);
+    if (!ev) return;
+
+    const nombre = document.getElementById('pedNombre').value.trim();
+    const cantidad = parseInt(document.getElementById('pedCantidad').value) || 0;
+    if (!nombre || cantidad <= 0) { alert('Nombre y cantidad son obligatorios'); return; }
+
+    const data = {
+      cliente: nombre,
+      telefono: document.getElementById('pedTelefono').value.trim(),
+      cantidad,
+      total: cantidad * ev.precio,
+      estado: document.getElementById('pedEstado').value,
+      tipoEntrega: document.getElementById('pedTipoEntrega').value,
+      direccion: document.getElementById('pedDireccion').value.trim(),
+      barrio: document.getElementById('pedBarrio').value.trim(),
+      hora: document.getElementById('pedHora').value.trim(),
+      notas: document.getElementById('pedNotas').value.trim(),
+      fechaPedido: new Date().toLocaleDateString('es-CO')
+    };
+
+    if (!ev.pedidos) ev.pedidos = [];
+
+    let pedido;
+    if (editId) {
+      pedido = ev.pedidos.find(p => p.id === editId);
+      if (!pedido) return;
+      // Si el pedido ya tenia pago vinculado y ahora cambia algo, lo actualizamos
+      const eraPagado = pedido.estado === 'Pagado';
+      Object.assign(pedido, data);
+      sincronizarPagoEvento(ev, pedido, eraPagado);
+    } else {
+      pedido = Object.assign({ id: genId('p') }, data);
+      ev.pedidos.push(pedido);
+      sincronizarPagoEvento(ev, pedido, false);
+    }
+    save(); closePedidoModal(); renderAll();
+  }
+
+  function sincronizarPagoEvento(ev, pedido, eraPagado) {
+    // Si esta pagado, asegurarnos de tener una entrada en payments
+    if (pedido.estado === 'Pagado') {
+      const concepto = 'Evento: ' + ev.nombre + ' — ' + pedido.cantidad + ' plato' + (pedido.cantidad > 1 ? 's' : '');
+      if (pedido.pagoRef) {
+        // actualizar pago existente
+        const pIdx = payments.findIndex(p => p.eventoPedidoRef === pedido.pagoRef);
+        if (pIdx >= 0) {
+          payments[pIdx].cliente = pedido.cliente;
+          payments[pIdx].concepto = concepto;
+          payments[pIdx].monto = pedido.total;
+          payments[pIdx].fecha = ev.fecha;
+        } else {
+          // No existe, crear nuevo
+          payments.push({
+            fecha: ev.fecha,
+            cliente: pedido.cliente,
+            concepto,
+            monto: pedido.total,
+            metodo: 'Evento',
+            estado: 'Pagado',
+            eventoPedidoRef: pedido.pagoRef
+          });
+        }
+      } else {
+        const ref = genId('pago');
+        pedido.pagoRef = ref;
+        payments.push({
+          fecha: ev.fecha,
+          cliente: pedido.cliente,
+          concepto,
+          monto: pedido.total,
+          metodo: 'Evento',
+          estado: 'Pagado',
+          eventoPedidoRef: ref
+        });
+      }
+    } else {
+      // No pagado: si tenia pago vinculado, eliminarlo
+      if (pedido.pagoRef) {
+        eliminarPagoEvento(pedido.pagoRef);
+        delete pedido.pagoRef;
+      }
+    }
+  }
+
+  function eliminarPagoEvento(ref) {
+    const idx = payments.findIndex(p => p.eventoPedidoRef === ref);
+    if (idx >= 0) payments.splice(idx, 1);
+  }
+
+  function togglePagoPedido(eventoId, pedidoId) {
+    const ev = eventos.find(e => e.id === eventoId);
+    if (!ev) return;
+    const ped = (ev.pedidos || []).find(p => p.id === pedidoId);
+    if (!ped) return;
+    const eraPagado = ped.estado === 'Pagado';
+    ped.estado = eraPagado ? 'Pendiente' : 'Pagado';
+    sincronizarPagoEvento(ev, ped, eraPagado);
+    save(); renderAll();
+  }
+
+  function deletePedido(eventoId, pedidoId) {
+    const ev = eventos.find(e => e.id === eventoId);
+    if (!ev) return;
+    const ped = (ev.pedidos || []).find(p => p.id === pedidoId);
+    if (!ped) return;
+    if (!confirm('Eliminar pedido de ' + ped.cliente + '?')) return;
+    if (ped.pagoRef) eliminarPagoEvento(ped.pagoRef);
+    ev.pedidos = ev.pedidos.filter(p => p.id !== pedidoId);
+    save(); renderAll();
+  }
+
+  function renderEventos() {
+    const cont = document.getElementById('eventosContent');
+    const empty = document.getElementById('emptyEventos');
+    if (!cont) return;
+
+    let totalPlatos = 0, totalCobrado = 0, totalPendiente = 0;
+    eventos.forEach(ev => {
+      (ev.pedidos || []).forEach(p => {
+        totalPlatos += p.cantidad || 0;
+        if (p.estado === 'Pagado') totalCobrado += p.total || 0;
+        else totalPendiente += p.total || 0;
+      });
+    });
+    document.getElementById('ev-total').textContent = eventos.length;
+    document.getElementById('ev-platos').textContent = totalPlatos;
+    document.getElementById('ev-ingresos').textContent = '$' + totalCobrado.toLocaleString();
+    document.getElementById('ev-pendiente').textContent = '$' + totalPendiente.toLocaleString();
+
+    if (eventos.length === 0) { cont.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    // Ordenar eventos por fecha ascendente
+    const ordenados = eventos.slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+    cont.innerHTML = ordenados.map(ev => {
+      const peds = ev.pedidos || [];
+      const cantPlatos = peds.reduce((s,p) => s + (p.cantidad||0), 0);
+      const cobr = peds.filter(p => p.estado === 'Pagado').reduce((s,p) => s + (p.total||0), 0);
+      const pend = peds.filter(p => p.estado !== 'Pagado').reduce((s,p) => s + (p.total||0), 0);
+      const fechaLeg = parseFechaLocal(ev.fecha).toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+      const filas = peds.length === 0
+        ? '<tr><td colspan="7" style="text-align:center; color:var(--gris); padding:18px; font-size:12px;">Sin pedidos. Agrega el primero arriba.</td></tr>'
+        : peds.map(p => {
+            const pagado = p.estado === 'Pagado';
+            const tel = p.telefono ? '<a href="https://wa.me/57' + p.telefono.replace(/\D/g,'') + '" target="_blank" style="color:#25D366; font-weight:700; text-decoration:none;">' + p.telefono + '</a>' : '—';
+            return '<tr style="' + (pagado ? '' : '') + '">' +
+              '<td><strong>' + p.cliente + '</strong>' + (p.notas ? '<div style="font-size:10px; color:#999;">' + p.notas + '</div>' : '') + '</td>' +
+              '<td>' + tel + '</td>' +
+              '<td><strong>' + p.cantidad + '</strong></td>' +
+              '<td><strong>$' + (p.total||0).toLocaleString() + '</strong></td>' +
+              '<td>' + (p.tipoEntrega || 'Domicilio') + (p.barrio ? '<div style="font-size:10px; color:#999;">' + p.barrio + '</div>' : '') + '</td>' +
+              '<td><span class="status ' + (pagado ? 'status-activo' : 'status-pendiente') + '" onclick="togglePagoPedido(\'' + ev.id + '\',\'' + p.id + '\')" style="cursor:pointer;" title="Click para alternar">' + p.estado + '</span></td>' +
+              '<td style="white-space:nowrap;">' +
+                '<button class="btn btn-small btn-secondary" onclick="openPedidoModal(\'' + ev.id + '\',\'' + p.id + '\')">Editar</button> ' +
+                '<button class="btn btn-small btn-danger" onclick="deletePedido(\'' + ev.id + '\',\'' + p.id + '\')">×</button>' +
+              '</td></tr>';
+          }).join('');
+
+      return '<div class="table-container" style="margin-bottom:24px;">' +
+        '<div class="table-header" style="flex-wrap:wrap; gap:10px;">' +
+        '<div>' +
+          '<span class="table-title">🎉 ' + ev.nombre + '</span>' +
+          '<div style="font-size:11px; color:var(--gris); margin-top:2px; text-transform:capitalize;">' + fechaLeg + ' · ' + ev.plato + ' · $' + ev.precio.toLocaleString() + ' c/u</div>' +
+          (ev.descripcion ? '<div style="font-size:11px; color:#777; margin-top:2px;">' + ev.descripcion + '</div>' : '') +
+          '<div style="font-size:11px; margin-top:6px;"><strong>' + peds.length + '</strong> pedidos · <strong>' + cantPlatos + '</strong> platos · <span style="color:var(--verde);">Cobrado $' + cobr.toLocaleString() + '</span> · <span style="color:#FFA000;">Por cobrar $' + pend.toLocaleString() + '</span></div>' +
+        '</div>' +
+        '<div style="display:flex; gap:6px;">' +
+          '<button class="btn btn-primary btn-small" onclick="openPedidoModal(\'' + ev.id + '\')">+ Pedido</button>' +
+          '<button class="btn btn-secondary btn-small" onclick="openEventoModal(\'' + ev.id + '\')">Editar</button>' +
+          '<button class="btn btn-danger btn-small" onclick="deleteEvento(\'' + ev.id + '\')">Eliminar</button>' +
+        '</div>' +
+        '</div>' +
+        '<table><thead><tr><th>Cliente</th><th>Tel</th><th>Cant</th><th>Total</th><th>Entrega</th><th>Pago</th><th></th></tr></thead>' +
+        '<tbody>' + filas + '</tbody></table></div>';
+    }).join('');
+  }
+
   // ===== RUTA DE DOMICILIO =====
+  function getPedidosEventoFecha(fecha) {
+    // Devuelve pedidos de eventos de domicilio para esa fecha, normalizados como pseudo-clientes
+    const out = [];
+    eventos.filter(ev => ev.fecha === fecha).forEach(ev => {
+      (ev.pedidos || [])
+        .filter(p => (p.tipoEntrega || 'Domicilio') === 'Domicilio')
+        .forEach(p => out.push({
+          _esEvento: true,
+          _eventoId: ev.id,
+          _pedidoId: p.id,
+          nombre: p.cliente + ' (Evento: ' + ev.nombre + ')',
+          telefono: p.telefono || '',
+          direcciones: [{ etiqueta: 'Domicilio', direccion: p.direccion || 'Sin dirección', referencia: p.notas || '', barrio: p.barrio || '' }]
+        }));
+    });
+    return out;
+  }
+
   function getEntregasFecha(fecha) {
     // Devuelve lista de clientes activos con entrega ese día según su schedule
     const activos = clients.filter(c => c.estado === 'Activo');
-    return activos.filter(c => {
+    const regulares = activos.filter(c => {
       const sched = getClientSchedule(clients.indexOf(c));
       return sched.includes(fecha);
     });
+    // Sumar pedidos de eventos de esa fecha
+    return regulares.concat(getPedidosEventoFecha(fecha));
   }
 
   function renderRuta() {
