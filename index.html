@@ -365,30 +365,103 @@
     .stats-grid { grid-template-columns: 1fr 1fr; }
   }
 
+  /* MOBILE TOPBAR + BOTTOM NAV (oculto en desktop) */
+  .mobile-topbar, .mobile-bottom-nav, .mobile-more-overlay { display: none; }
+
   /* MOBILE */
   @media (max-width: 640px) {
-    /* Sidebar se vuelve topbar horizontal */
-    .sidebar {
-      width: 100%; height: auto; bottom: auto;
-      flex-direction: row; padding: 8px 6px;
-      overflow-x: auto; overflow-y: hidden;
-      border-right: none; border-bottom: 1px solid rgba(0,0,0,0.08);
-      gap: 4px;
-    }
-    .sidebar-logo, .sidebar-sub, .sidebar-footer, .user-badge { display: none; }
-    .nav-item span:not(.icon):not(.badge) { display: none; }
-    .nav-item {
-      flex: 0 0 auto; padding: 10px 12px; margin-bottom: 0;
-      min-width: 44px; justify-content: center;
-    }
-    .nav-item .badge {
-      position: absolute; top: 2px; right: 2px;
-      margin-left: 0; font-size: 9px; padding: 1px 5px;
-    }
-    .nav-item { position: relative; }
+    /* Ocultar sidebar y sync-badge */
+    .sidebar { display: none !important; }
+    .sync-badge { top: auto; bottom: 76px; right: 10px; }
 
-    /* Main ocupa todo el ancho debajo de la topbar */
-    .main { margin-left: 0; margin-top: 64px; padding: 14px; }
+    /* Topbar móvil arriba */
+    .mobile-topbar {
+      display: flex; position: fixed; top: 0; left: 0; right: 0;
+      height: 50px; background: #fff; z-index: 99;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      padding-top: env(safe-area-inset-top);
+      height: calc(50px + env(safe-area-inset-top));
+    }
+    .mobile-topbar-logo {
+      font-family: 'Darumadrop One', sans-serif;
+      font-size: 22px; color: var(--menta);
+    }
+    .mobile-topbar-user {
+      font-size: 11px; color: #888;
+      max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* Bottom nav fija abajo */
+    .mobile-bottom-nav {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; z-index: 99;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      padding: 6px 0;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+    }
+    .mobile-nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 3px;
+      padding: 6px 4px; cursor: pointer;
+      color: #999; transition: color 0.2s;
+    }
+    .mobile-nav-item .icon { font-size: 22px; }
+    .mobile-nav-item .label { font-size: 10px; font-weight: 600; }
+    .mobile-nav-item.active { color: var(--menta); }
+
+    /* Main ocupa todo, ajustado entre topbar y bottom nav */
+    .main {
+      margin-left: 0;
+      margin-top: calc(50px + env(safe-area-inset-top));
+      padding: 14px 14px calc(80px + env(safe-area-inset-bottom));
+      min-height: 0;
+    }
+
+    /* Overlay "Más" — bottom sheet */
+    .mobile-more-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 200;
+      align-items: flex-end; justify-content: center;
+    }
+    .mobile-more-overlay.show { display: flex; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .mobile-more-sheet {
+      background: #fff; width: 100%;
+      border-radius: 20px 20px 0 0;
+      padding: 14px 18px calc(20px + env(safe-area-inset-bottom));
+      max-height: 80vh; overflow-y: auto;
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .mobile-more-handle {
+      width: 40px; height: 4px; background: #ddd;
+      border-radius: 2px; margin: 0 auto 14px;
+    }
+    .mobile-more-title {
+      font-family: 'Lilita One', sans-serif;
+      font-size: 18px; margin-bottom: 14px; text-align: center;
+    }
+    .mobile-more-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .mobile-more-item {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; padding: 14px 6px; cursor: pointer;
+      background: #FFF8EE; border-radius: 12px;
+      font-size: 11px; font-weight: 600; color: #555;
+      text-align: center;
+    }
+    .mobile-more-item .icon { font-size: 26px; }
+    .mobile-more-item:active { background: var(--menta-glow); }
+    .mobile-more-close {
+      width: 100%; padding: 14px; margin-top: 14px;
+      background: #f5f5f5; border: none; border-radius: 12px;
+      font-family: 'Quicksand'; font-size: 14px; font-weight: 700;
+      cursor: pointer; color: #555;
+    }
 
     /* Page header en columna */
     .page-header {
@@ -407,11 +480,13 @@
     .form-row { grid-template-columns: 1fr !important; }
 
     /* Modal casi pantalla completa */
-    .modal-overlay { padding: 8px; align-items: flex-start; }
+    .modal-overlay { padding: 0; align-items: flex-end; }
     .modal {
       width: 100% !important; max-width: 100% !important;
-      padding: 20px 16px; border-radius: 14px;
-      margin-top: 10px; max-height: calc(100vh - 20px);
+      padding: 20px 16px calc(80px + env(safe-area-inset-bottom));
+      border-radius: 20px 20px 0 0;
+      max-height: 92vh;
+      animation: slideUp 0.25s ease-out;
     }
     .modal-title { font-size: 18px; }
 
@@ -432,6 +507,9 @@
     /* Filtros con scroll horizontal si son muchos */
     .table-filters { overflow-x: auto; flex-wrap: nowrap; }
     .filter-btn { flex-shrink: 0; }
+
+    /* Sync badge no se sobreponga al bottom nav */
+    .sync-badge.show { z-index: 110; }
   }
 
   /* LOGIN SCREEN */
@@ -542,61 +620,61 @@
   <div class="sidebar-logo">encocados</div>
   <div class="sidebar-sub">tu almuerzo de chef, en coca</div>
 
-  <div class="nav-item active" onclick="showPage('dashboard')">
+  <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
     <span class="icon">📊</span>
     <span>Dashboard</span>
   </div>
-  <div class="nav-item" onclick="showPage('clientes')">
+  <div class="nav-item" data-page="clientes" onclick="showPage('clientes')">
     <span class="icon">👥</span>
     <span>Clientes</span>
     <span class="badge" id="clientCount">0</span>
   </div>
-  <div class="nav-item" onclick="showPage('entregas')">
+  <div class="nav-item" data-page="entregas" onclick="showPage('entregas')">
     <span class="icon">🍲</span>
     <span>Entregas</span>
   </div>
-  <div class="nav-item" onclick="showPage('pagos')">
+  <div class="nav-item" data-page="pagos" onclick="showPage('pagos')">
     <span class="icon">💰</span>
     <span>Pagos</span>
   </div>
-  <div class="nav-item" onclick="showPage('financiero')">
+  <div class="nav-item" data-page="financiero" onclick="showPage('financiero')">
     <span class="icon">📈</span>
     <span>Financiero</span>
   </div>
-  <div class="nav-item" onclick="showPage('cocas')">
+  <div class="nav-item" data-page="cocas" onclick="showPage('cocas')">
     <span class="icon">♻️</span>
     <span>Cocas</span>
   </div>
-  <div class="nav-item" onclick="showPage('menus')">
+  <div class="nav-item" data-page="menus" onclick="showPage('menus')">
     <span class="icon">📋</span>
     <span>Menus</span>
   </div>
-  <div class="nav-item" onclick="showPage('almanaque')">
+  <div class="nav-item" data-page="almanaque" onclick="showPage('almanaque')">
     <span class="icon">📅</span>
     <span>Almanaque</span>
   </div>
-  <div class="nav-item" onclick="showPage('eventos')">
+  <div class="nav-item" data-page="eventos" onclick="showPage('eventos')">
     <span class="icon">🎉</span>
     <span>Eventos</span>
   </div>
-  <div class="nav-item" onclick="showPage('recetario')">
+  <div class="nav-item" data-page="recetario" onclick="showPage('recetario')">
     <span class="icon">📖</span>
     <span>Recetario</span>
     <span class="badge" id="recetaCount">0</span>
   </div>
-  <div class="nav-item" onclick="showPage('productos')">
+  <div class="nav-item" data-page="productos" onclick="showPage('productos')">
     <span class="icon">🥬</span>
     <span>Productos</span>
   </div>
-  <div class="nav-item" onclick="showPage('proveedores')">
+  <div class="nav-item" data-page="proveedores" onclick="showPage('proveedores')">
     <span class="icon">🏪</span>
     <span>Proveedores</span>
   </div>
-  <div class="nav-item" onclick="showPage('ruta')">
+  <div class="nav-item" data-page="ruta" onclick="showPage('ruta')">
     <span class="icon">🛵</span>
     <span>Ruta</span>
   </div>
-  <div class="nav-item" onclick="showPage('usuarios')" id="navUsuarios">
+  <div class="nav-item" data-page="usuarios" onclick="showPage('usuarios')" id="navUsuarios">
     <span class="icon">🔑</span>
     <span>Usuarios</span>
   </div>
@@ -613,6 +691,78 @@
   </div>
 
   <div class="sidebar-footer">encocados CRM v3.0<br>Abril 2026</div>
+</div>
+
+<!-- TOPBAR MÓVIL -->
+<div class="mobile-topbar">
+  <div class="mobile-topbar-logo">encocados</div>
+  <div class="mobile-topbar-user" id="mobileTopbarUser">—</div>
+</div>
+
+<!-- BOTTOM NAV MÓVIL -->
+<div class="mobile-bottom-nav">
+  <div class="mobile-nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+    <span class="icon">📊</span><span class="label">Inicio</span>
+  </div>
+  <div class="mobile-nav-item" data-page="clientes" onclick="showPage('clientes')">
+    <span class="icon">👥</span><span class="label">Clientes</span>
+  </div>
+  <div class="mobile-nav-item" data-page="entregas" onclick="showPage('entregas')">
+    <span class="icon">🍲</span><span class="label">Entregas</span>
+  </div>
+  <div class="mobile-nav-item" data-page="ruta" onclick="showPage('ruta')">
+    <span class="icon">🛵</span><span class="label">Ruta</span>
+  </div>
+  <div class="mobile-nav-item" onclick="openMobileMore()">
+    <span class="icon">⋯</span><span class="label">Más</span>
+  </div>
+</div>
+
+<!-- OVERLAY MENÚ "MÁS" MÓVIL -->
+<div class="mobile-more-overlay" id="mobileMoreOverlay" onclick="if(event.target===this)closeMobileMore()">
+  <div class="mobile-more-sheet">
+    <div class="mobile-more-handle"></div>
+    <div class="mobile-more-title">Más opciones</div>
+    <div class="mobile-more-grid">
+      <div class="mobile-more-item" data-page="pagos" onclick="showPage('pagos')">
+        <span class="icon">💰</span><span>Pagos</span>
+      </div>
+      <div class="mobile-more-item" data-page="financiero" onclick="showPage('financiero')">
+        <span class="icon">📈</span><span>Financiero</span>
+      </div>
+      <div class="mobile-more-item" data-page="cocas" onclick="showPage('cocas')">
+        <span class="icon">♻️</span><span>Cocas</span>
+      </div>
+      <div class="mobile-more-item" data-page="menus" onclick="showPage('menus')">
+        <span class="icon">📋</span><span>Menús</span>
+      </div>
+      <div class="mobile-more-item" data-page="almanaque" onclick="showPage('almanaque')">
+        <span class="icon">📅</span><span>Almanaque</span>
+      </div>
+      <div class="mobile-more-item" data-page="eventos" onclick="showPage('eventos')">
+        <span class="icon">🎉</span><span>Eventos</span>
+      </div>
+      <div class="mobile-more-item" data-page="recetario" onclick="showPage('recetario')">
+        <span class="icon">📖</span><span>Recetario</span>
+      </div>
+      <div class="mobile-more-item" data-page="productos" onclick="showPage('productos')">
+        <span class="icon">🥬</span><span>Productos</span>
+      </div>
+      <div class="mobile-more-item" data-page="proveedores" onclick="showPage('proveedores')">
+        <span class="icon">🏪</span><span>Proveedores</span>
+      </div>
+      <div class="mobile-more-item" data-page="usuarios" onclick="showPage('usuarios')" id="mobileNavUsuarios">
+        <span class="icon">🔑</span><span>Usuarios</span>
+      </div>
+      <div class="mobile-more-item" onclick="exportBackup()">
+        <span class="icon">💾</span><span>Exportar</span>
+      </div>
+      <div class="mobile-more-item" onclick="doLogout()">
+        <span class="icon">🚪</span><span>Cerrar sesión</span>
+      </div>
+    </div>
+    <button class="mobile-more-close" onclick="closeMobileMore()">Cerrar</button>
+  </div>
 </div>
 
 <!-- MAIN -->
@@ -1823,6 +1973,8 @@
         document.getElementById('userName').textContent = window.currentUser.nombre;
         document.getElementById('userRole').textContent = window.currentUser.role;
         document.getElementById('userBadge').style.display = 'block';
+        const topbarUser = document.getElementById('mobileTopbarUser');
+        if (topbarUser) topbarUser.textContent = window.currentUser.nombre + ' · ' + window.currentUser.role;
 
         // Ocultar login, mostrar app
         document.body.classList.remove('not-logged-in');
@@ -1921,13 +2073,9 @@
       domiciliario: ['dashboard', 'ruta', 'cocas', 'entregas']
     };
     const permitidas = permisos[role] || ['dashboard'];
-    document.querySelectorAll('.nav-item').forEach(item => {
-      const onclick = item.getAttribute('onclick') || '';
-      const m = onclick.match(/showPage\('([^']+)'\)/);
-      if (m) {
-        const page = m[1];
-        if (!permitidas.includes(page)) item.style.display = 'none';
-      }
+    document.querySelectorAll('.nav-item, .mobile-nav-item, .mobile-more-item').forEach(item => {
+      const page = item.getAttribute('data-page');
+      if (page && !permitidas.includes(page)) item.style.display = 'none';
     });
   }
 
@@ -2026,10 +2174,23 @@
   // ===== NAVIGATION =====
   function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('page-' + page).classList.add('active');
-    event.currentTarget.classList.add('active');
+    document.querySelectorAll('[data-page]').forEach(n => {
+      if (n.getAttribute('data-page') === page) n.classList.add('active');
+      else n.classList.remove('active');
+    });
+    const pageEl = document.getElementById('page-' + page);
+    if (pageEl) pageEl.classList.add('active');
+    const moreEl = document.getElementById('mobileMoreOverlay');
+    if (moreEl) moreEl.classList.remove('show');
     renderAll();
+    window.scrollTo(0, 0);
+  }
+
+  function openMobileMore() {
+    document.getElementById('mobileMoreOverlay').classList.add('show');
+  }
+  function closeMobileMore() {
+    document.getElementById('mobileMoreOverlay').classList.remove('show');
   }
 
   // ===== RENDER =====
