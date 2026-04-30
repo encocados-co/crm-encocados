@@ -657,6 +657,10 @@
     <span class="icon">🎉</span>
     <span>Eventos</span>
   </div>
+  <div class="nav-item" data-page="historial" onclick="showPage('historial')">
+    <span class="icon">📜</span>
+    <span>Historial</span>
+  </div>
   <div class="nav-item" data-page="recetario" onclick="showPage('recetario')">
     <span class="icon">📖</span>
     <span>Recetario</span>
@@ -741,6 +745,9 @@
       </div>
       <div class="mobile-more-item" data-page="eventos" onclick="showPage('eventos')">
         <span class="icon">🎉</span><span>Eventos</span>
+      </div>
+      <div class="mobile-more-item" data-page="historial" onclick="showPage('historial')">
+        <span class="icon">📜</span><span>Historial</span>
       </div>
       <div class="mobile-more-item" data-page="recetario" onclick="showPage('recetario')">
         <span class="icon">📖</span><span>Recetario</span>
@@ -1108,6 +1115,63 @@
     </div>
   </div>
 
+  <!-- ===== HISTORIAL DE COMPRAS ===== -->
+  <div class="page" id="page-historial">
+    <div class="page-header">
+      <div class="page-title">Historial de compras</div>
+    </div>
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      Aquí ves todos los planes que han comprado tus clientes (activos, cerrados, pasados). Cuando un plan termina (todos los días entregados o pasó la fecha fin), el cliente queda Inactivo hasta que renueve. Click en un plan para ver el detalle día por día.
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      <div class="stat-card menta">
+        <div class="stat-label">Planes totales</div>
+        <div class="stat-value" id="hist-total">0</div>
+      </div>
+      <div class="stat-card terra">
+        <div class="stat-label">Planes activos</div>
+        <div class="stat-value" id="hist-activos">0</div>
+      </div>
+      <div class="stat-card verde">
+        <div class="stat-label">Ingresos cobrados</div>
+        <div class="stat-value" id="hist-cobrado">$0</div>
+      </div>
+      <div class="stat-card dorado">
+        <div class="stat-label">Por cobrar</div>
+        <div class="stat-value" id="hist-pendiente">$0</div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+      <input type="text" class="form-input" id="histBuscarCliente" placeholder="🔍 Buscar por cliente..." style="flex:1; min-width:200px;" oninput="renderHistorial()">
+      <select class="form-input" id="histFiltroEstado" onchange="renderHistorial()" style="width:auto;">
+        <option value="todos">Todos los estados</option>
+        <option value="activo">Solo activos</option>
+        <option value="cerrado">Solo cerrados</option>
+      </select>
+      <select class="form-input" id="histFiltroPago" onchange="renderHistorial()" style="width:auto;">
+        <option value="todos">Todos los pagos</option>
+        <option value="Pagado">Pagados</option>
+        <option value="Pendiente">Pendientes</option>
+      </select>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Cliente</th><th>Plan</th><th>Fecha inicio</th><th>Fecha fin</th><th>Entregados</th><th>Precio</th><th>Pago</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody id="historialBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyHistorial" style="display:none;">
+        <div class="icon">📜</div>
+        <h3>Sin historial</h3>
+        <p>Aún no hay compras registradas</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== PRODUCTOS ===== -->
   <div class="page" id="page-productos">
     <div class="page-header">
@@ -1437,6 +1501,81 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveClient()">Guardar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RENOVAR PLAN -->
+<div class="modal-overlay" id="renovarModal">
+  <div class="modal">
+    <div class="modal-title">🔄 Renovar plan</div>
+    <input type="hidden" id="renovarClienteIdx" value="-1">
+
+    <div style="background:#FFF0DC; padding:12px; border-radius:10px; font-size:12px; margin-bottom:14px;" id="renovarVigenteInfo"></div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Plan nuevo</label>
+        <select class="form-input" id="rPlan" onchange="renovarRecalcular()">
+          <option value="Semanal">Semanal — $90.000 (5 días)</option>
+          <option value="Quincenal">Quincenal — $170.000 (10 días)</option>
+          <option value="Mensual">Mensual — $320.000 (20 días)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha de inicio</label>
+        <input type="date" class="form-input" id="rFechaInicio" onchange="renovarRecalcular()">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Precio (editable)</label>
+        <input type="number" class="form-input" id="rPrecio">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado pago</label>
+        <select class="form-input" id="rEstadoPago">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pagado">Pagado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Días del nuevo plan (calculados automáticamente, lun–vie sin festivos)</label>
+      <div id="rDiasPreview" style="background:#FFF8EE; border-radius:10px; padding:10px; font-size:12px; min-height:40px;"></div>
+      <div style="font-size:10px; color:#999; margin-top:4px;">Si quieres mover algún día, edita el cliente después.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notas (opcional)</label>
+      <input type="text" class="form-input" id="rNotas" placeholder="Ej: Pagó por transferencia, descuento aplicado, etc.">
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeRenovarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRenovacion()">Renovar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE PLAN -->
+<div class="modal-overlay" id="planDetalleModal">
+  <div class="modal" style="width:600px;">
+    <div class="modal-title" id="planDetalleTitulo">Detalle del plan</div>
+    <input type="hidden" id="planDetalleClienteIdx" value="-1">
+    <input type="hidden" id="planDetallePlanId" value="">
+
+    <div id="planDetalleHeader" style="background:#FFF0DC; padding:12px; border-radius:10px; font-size:12px; margin-bottom:14px;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Días del plan — clic en cada día para cambiar estado</label>
+      <div id="planDetalleDias"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closePlanDetalle()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2054,6 +2193,8 @@
         productos = d.productos || [];
         eventos = d.eventos || [];
         migrarEntregasAntiguas();
+        migrarClientesAHistorial();
+        chequearCierresAutomaticos();
       } else {
         clients = []; payments = []; deliveries = {}; menus = []; recetas = []; cocasLog = []; compras = []; proveedores = []; productos = []; eventos = [];
       }
@@ -2069,7 +2210,7 @@
     if (role === 'admin') return; // ve todo
 
     const permisos = {
-      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores', 'eventos'],
+      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores', 'eventos', 'historial'],
       domiciliario: ['dashboard', 'ruta', 'cocas', 'entregas']
     };
     const permitidas = permisos[role] || ['dashboard'];
@@ -2203,6 +2344,7 @@
     renderCocas();
     renderAlmanaque();
     if (typeof renderEventos === 'function') renderEventos();
+    if (typeof renderHistorial === 'function') renderHistorial();
     if (typeof renderProductos === 'function') renderProductos();
     if (typeof renderProveedores === 'function') renderProveedores();
     if (typeof renderRuta === 'function') renderRuta();
@@ -2250,6 +2392,8 @@
         '<td style="font-size:12px;">' + vence + '<br><span style="font-size:10px;color:' + (restantes <= 2 ? 'var(--rojo)' : '#999') + ';">' + restantes + ' restantes</span></td>' +
         '<td class="nota-cell" style="font-size:11px;color:#666;max-width:180px;" data-nota="' + (c.notas || '').replace(/"/g, '&quot;') + '">' + (c.notas ? (c.notas.length > 30 ? '<span class="nota-short" onclick="toggleNota(this.parentElement)">' + c.notas.substring(0,30) + '… <b class="nota-link">ver mas</b></span><span class="nota-full" style="display:none" onclick="toggleNota(this.parentElement)">' + c.notas + ' <b class="nota-link">ver menos</b></span>' : c.notas) : '<span style="color:#ddd;">—</span>') + '</td>' +
         '<td><button class="btn btn-secondary btn-small" onclick="editClient(' + idx + ')">Editar</button> ' +
+        '<button class="btn btn-small" style="background:#E5461A;color:#fff;" onclick="openRenovarModal(' + idx + ')">🔄 Renovar</button> ' +
+        '<button class="btn btn-secondary btn-small" onclick="openHistorialCliente(' + idx + ')">📜 Historial</button> ' +
         '<button class="btn btn-secondary btn-small" style="color:#FF9800;border-color:#FFB74D;" onclick="openCancelModal(' + idx + ')">Cancelar dia</button> ' +
         '<button class="btn btn-danger btn-small" onclick="deleteClient(' + idx + ')">X</button></td>' +
         '</tr>';
@@ -2295,6 +2439,95 @@
         '<span style="font-size:13px; font-weight:700; color:' + (p.estado === 'Pagado' ? 'var(--verde)' : '#FFA000') + ';">$' + p.monto.toLocaleString() + '</span></div>';
     });
     document.getElementById('dash-pagos').innerHTML = pagosHtml || '<p style="color:var(--gris); font-size:12px; text-align:center; padding:20px;">Sin pagos</p>';
+  }
+
+  // ===== HISTORIAL DE PLANES =====
+  function genPlanId() { return 'plan_' + Date.now() + '_' + Math.floor(Math.random()*10000); }
+
+  function planActivoCliente(c) {
+    if (!c.historialPlanes || c.historialPlanes.length === 0) return null;
+    return c.historialPlanes.find(p => p.activo) || null;
+  }
+
+  // Migra clientes existentes a la estructura historialPlanes (se llama una vez al cargar)
+  function migrarClientesAHistorial() {
+    let cambios = false;
+    clients.forEach((c, idx) => {
+      if (!c.historialPlanes) c.historialPlanes = [];
+      if (c.historialPlanes.length === 0 && c.plan) {
+        const dias = getClientSchedule(idx);
+        const fechaInicio = c.inicio || (dias[0] || hoyISO());
+        const fechaFin = dias.length > 0 ? dias[dias.length - 1] : fechaInicio;
+        const precio = PRECIOS[c.plan] || 0;
+        const diasEstado = {};
+        dias.forEach(d => {
+          diasEstado[d] = {
+            entregado: !!(deliveries[d] && deliveries[d][c.nombre]),
+            razon: ''
+          };
+        });
+        c.historialPlanes.push({
+          id: genPlanId(),
+          plan: c.plan,
+          fechaInicio,
+          fechaFin,
+          dias,
+          precio,
+          estadoPago: 'Pendiente',
+          pagoRef: null,
+          notas: '',
+          diasEstado,
+          activo: true,
+          cerrado: false,
+          fechaCierre: null,
+          creado: new Date().toLocaleDateString('es-CO')
+        });
+        cambios = true;
+      }
+    });
+    if (cambios) { console.log('Migración historialPlanes aplicada'); save(); }
+  }
+
+  // Sincroniza diasEstado del plan activo con deliveries[fecha][nombre]
+  function sincronizarDiasEstado(clienteIdx, fecha, entregado) {
+    const c = clients[clienteIdx];
+    if (!c) return;
+    const plan = planActivoCliente(c);
+    if (!plan) return;
+    if (!plan.diasEstado) plan.diasEstado = {};
+    if (plan.dias && plan.dias.includes(fecha)) {
+      if (!plan.diasEstado[fecha]) plan.diasEstado[fecha] = { entregado: false, razon: '' };
+      plan.diasEstado[fecha].entregado = entregado;
+      // Verificar si todos los días del plan ya pasaron (entregados o no) -> cerrar plan
+      verificarCierrePlan(clienteIdx);
+    }
+  }
+
+  function verificarCierrePlan(clienteIdx) {
+    const c = clients[clienteIdx];
+    if (!c) return;
+    const plan = planActivoCliente(c);
+    if (!plan || plan.cerrado) return;
+    const hoy = hoyISO();
+    // Cerrar si la fecha actual ya pasó la fechaFin
+    const fechaFinPasada = plan.fechaFin < hoy;
+    // O si todos los días del plan están marcados como entregado o como "no entregado con razón"
+    const todosResueltos = plan.dias && plan.dias.length > 0 && plan.dias.every(d => {
+      const e = plan.diasEstado && plan.diasEstado[d];
+      return e && (e.entregado === true || (e.entregado === false && e.razon));
+    });
+    if (fechaFinPasada || todosResueltos) {
+      plan.cerrado = true;
+      plan.activo = false;
+      plan.fechaCierre = hoy;
+      // Cliente queda Inactivo si no tiene otro plan activo
+      if (!planActivoCliente(c)) c.estado = 'Inactivo';
+    }
+  }
+
+  // Cierre automático para todos los clientes (corre periódicamente o al cargar)
+  function chequearCierresAutomaticos() {
+    clients.forEach((c, idx) => verificarCierrePlan(idx));
   }
 
   // Migracion una sola vez: claves antiguas "lunes"/"martes"/etc -> fechas reales de la semana 20-24 abril 2026
@@ -2415,7 +2648,13 @@
     const menuSem = findMenuForDate(fecha);
     const menuDia = menuSem ? menuSem.dias.find(d => d.dia === diaNombre) : null;
 
-    const activos = clients.filter(c => c.estado === 'Activo' || c.estado === 'Por confirmar');
+    // Solo aparecen clientes cuyo plan activo incluye esta fecha en sus días programados
+    const activos = clients.filter(c => {
+      if (c.estado !== 'Activo' && c.estado !== 'Por confirmar') return false;
+      const plan = planActivoCliente(c);
+      if (!plan || plan.cerrado) return false;
+      return Array.isArray(plan.dias) && plan.dias.includes(fecha);
+    });
     const delivKey = fecha;
     if (!deliveries[delivKey]) deliveries[delivKey] = {};
 
@@ -3053,7 +3292,10 @@
   function toggleDelivery(dia, nombre) {
     if (!deliveries[dia]) deliveries[dia] = {};
     deliveries[dia][nombre] = !deliveries[dia][nombre];
-    save(); renderEntregas(); renderDashboard();
+    // Sincronizar con plan activo del cliente
+    const idxCliente = clients.findIndex(c => c.nombre === nombre);
+    if (idxCliente >= 0) sincronizarDiasEstado(idxCliente, dia, deliveries[dia][nombre]);
+    save(); renderEntregas(); renderDashboard(); renderHistorial && renderHistorial();
   }
 
   function filterPlan(plan, btn) {
@@ -3965,6 +4207,314 @@
     }).join('');
   }
 
+  // ===== RENOVACIÓN DE PLANES =====
+  function calcDiasHabilesDesde(fechaInicioISO, cantidad) {
+    const dias = [];
+    const cursor = parseFechaLocal(fechaInicioISO);
+    let safety = 0;
+    while (dias.length < cantidad && safety < 200) {
+      const dow = cursor.getDay();
+      const iso = cursor.getFullYear() + '-' + String(cursor.getMonth()+1).padStart(2,'0') + '-' + String(cursor.getDate()).padStart(2,'0');
+      if (dow >= 1 && dow <= 5 && !esFestivo(iso)) dias.push(iso);
+      cursor.setDate(cursor.getDate() + 1);
+      safety++;
+    }
+    return dias;
+  }
+
+  function openRenovarModal(idx) {
+    const c = clients[idx];
+    if (!c) return;
+    const planVig = planActivoCliente(c);
+    document.getElementById('renovarClienteIdx').value = idx;
+
+    let infoHtml = '<strong>' + c.nombre + '</strong><br>';
+    if (planVig) {
+      const entregados = (planVig.dias || []).filter(d => planVig.diasEstado && planVig.diasEstado[d] && planVig.diasEstado[d].entregado).length;
+      const total = (planVig.dias || []).length;
+      infoHtml += 'Plan vigente: <strong>' + planVig.plan + '</strong> (' + planVig.fechaInicio + ' → ' + planVig.fechaFin + ') · ' + entregados + '/' + total + ' entregados';
+      if (planVig.cerrado) infoHtml += ' · <span style="color:var(--rojo);">CERRADO</span>';
+    } else {
+      infoHtml += 'Sin plan vigente.';
+    }
+    document.getElementById('renovarVigenteInfo').innerHTML = infoHtml;
+
+    // Default plan = el que ya tiene
+    document.getElementById('rPlan').value = c.plan || 'Semanal';
+    // Fecha inicio sugerida: día siguiente a fechaFin del plan vigente, o lunes próximo
+    let sugerida;
+    if (planVig && planVig.fechaFin) {
+      const d = parseFechaLocal(planVig.fechaFin);
+      d.setDate(d.getDate() + 1);
+      sugerida = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    } else {
+      sugerida = hoyISO();
+    }
+    document.getElementById('rFechaInicio').value = sugerida;
+    document.getElementById('rEstadoPago').value = 'Pendiente';
+    document.getElementById('rNotas').value = '';
+    renovarRecalcular();
+    document.getElementById('renovarModal').classList.add('show');
+  }
+
+  function closeRenovarModal() { document.getElementById('renovarModal').classList.remove('show'); }
+
+  function renovarRecalcular() {
+    const plan = document.getElementById('rPlan').value;
+    const fecha = document.getElementById('rFechaInicio').value;
+    if (!fecha) return;
+    const cantidad = DIAS_PLAN[plan] || 5;
+    const dias = calcDiasHabilesDesde(fecha, cantidad);
+    document.getElementById('rPrecio').value = PRECIOS[plan] || 0;
+    const preview = dias.map(d => {
+      const fl = parseFechaLocal(d).toLocaleDateString('es-CO', { weekday:'short', day:'numeric', month:'short' });
+      return '<span style="display:inline-block; background:#fff; border:1px solid var(--borde); padding:4px 8px; margin:2px; border-radius:6px; font-size:11px; text-transform:capitalize;">' + fl + '</span>';
+    }).join('');
+    document.getElementById('rDiasPreview').innerHTML = preview || '<span style="color:#999;">No se pudieron calcular días</span>';
+    document.getElementById('rDiasPreview').setAttribute('data-dias', JSON.stringify(dias));
+  }
+
+  function saveRenovacion() {
+    const idx = parseInt(document.getElementById('renovarClienteIdx').value);
+    if (idx < 0) return;
+    const c = clients[idx];
+    const plan = document.getElementById('rPlan').value;
+    const fechaInicio = document.getElementById('rFechaInicio').value;
+    if (!fechaInicio) { alert('Selecciona fecha de inicio'); return; }
+
+    const planVig = planActivoCliente(c);
+    if (planVig && !planVig.cerrado && fechaInicio <= planVig.fechaFin) {
+      if (!confirm('La fecha de inicio se solapa con el plan vigente que vence ' + planVig.fechaFin + '. ¿Igual continuar y cerrar el plan vigente?')) return;
+    }
+
+    const dias = JSON.parse(document.getElementById('rDiasPreview').getAttribute('data-dias') || '[]');
+    if (dias.length === 0) { alert('No hay días calculados'); return; }
+    const fechaFin = dias[dias.length - 1];
+    const precio = parseInt(document.getElementById('rPrecio').value) || 0;
+    const estadoPago = document.getElementById('rEstadoPago').value;
+    const notas = document.getElementById('rNotas').value.trim();
+
+    // Cerrar plan vigente
+    if (planVig) {
+      planVig.activo = false;
+      planVig.cerrado = true;
+      planVig.fechaCierre = hoyISO();
+    }
+
+    // Crear nuevo plan
+    const nuevoPlan = {
+      id: genPlanId(),
+      plan,
+      fechaInicio,
+      fechaFin,
+      dias,
+      precio,
+      estadoPago,
+      pagoRef: null,
+      notas,
+      diasEstado: {},
+      activo: true,
+      cerrado: false,
+      fechaCierre: null,
+      creado: new Date().toLocaleDateString('es-CO')
+    };
+    dias.forEach(d => { nuevoPlan.diasEstado[d] = { entregado: false, razon: '' }; });
+
+    // Crear pago automático si está Pagado
+    if (estadoPago === 'Pagado') {
+      const pagoRef = genPlanId().replace('plan_', 'pago_');
+      nuevoPlan.pagoRef = pagoRef;
+      payments.push({
+        fecha: fechaInicio,
+        cliente: c.nombre,
+        concepto: 'Plan ' + plan + ' (' + fechaInicio + ' → ' + fechaFin + ')',
+        monto: precio,
+        metodo: 'Renovación',
+        estado: 'Pagado',
+        planRef: pagoRef
+      });
+    } else {
+      // Aún Pendiente: crear entrada en payments con estado Pendiente
+      const pagoRef = genPlanId().replace('plan_', 'pago_');
+      nuevoPlan.pagoRef = pagoRef;
+      payments.push({
+        fecha: fechaInicio,
+        cliente: c.nombre,
+        concepto: 'Plan ' + plan + ' (' + fechaInicio + ' → ' + fechaFin + ')',
+        monto: precio,
+        metodo: 'Renovación',
+        estado: 'Pendiente',
+        planRef: pagoRef
+      });
+    }
+
+    if (!c.historialPlanes) c.historialPlanes = [];
+    c.historialPlanes.push(nuevoPlan);
+
+    // Actualizar campos del cliente
+    c.plan = plan;
+    c.inicio = fechaInicio;
+    c.estado = 'Activo';
+    saveClientSchedule(idx, dias);
+
+    save();
+    closeRenovarModal();
+    renderAll();
+    alert('✅ Plan renovado. Cliente: ' + c.nombre + ' · Plan ' + plan + ' (' + dias.length + ' días)');
+  }
+
+  // ===== HISTORIAL DE COMPRAS =====
+  function openHistorialCliente(idx) {
+    const c = clients[idx];
+    if (!c) return;
+    showPage('historial');
+    setTimeout(() => {
+      document.getElementById('histBuscarCliente').value = c.nombre;
+      document.getElementById('histFiltroEstado').value = 'todos';
+      document.getElementById('histFiltroPago').value = 'todos';
+      renderHistorial();
+    }, 50);
+  }
+
+  function renderHistorial() {
+    const body = document.getElementById('historialBody');
+    const empty = document.getElementById('emptyHistorial');
+    if (!body) return;
+
+    const buscar = (document.getElementById('histBuscarCliente').value || '').toLowerCase();
+    const fEstado = document.getElementById('histFiltroEstado').value;
+    const fPago = document.getElementById('histFiltroPago').value;
+
+    // Aplanar todos los planes
+    const filas = [];
+    clients.forEach((c, idxC) => {
+      (c.historialPlanes || []).forEach(p => filas.push({ cliente: c, idxCliente: idxC, plan: p }));
+    });
+
+    let filtradas = filas;
+    if (buscar) filtradas = filtradas.filter(f => f.cliente.nombre.toLowerCase().includes(buscar));
+    if (fEstado === 'activo') filtradas = filtradas.filter(f => f.plan.activo && !f.plan.cerrado);
+    if (fEstado === 'cerrado') filtradas = filtradas.filter(f => f.plan.cerrado);
+    if (fPago !== 'todos') filtradas = filtradas.filter(f => f.plan.estadoPago === fPago);
+
+    // Stats
+    const totalPlanes = filas.length;
+    const activos = filas.filter(f => f.plan.activo && !f.plan.cerrado).length;
+    const cobrado = filas.filter(f => f.plan.estadoPago === 'Pagado').reduce((s,f) => s + (f.plan.precio || 0), 0);
+    const pendiente = filas.filter(f => f.plan.estadoPago !== 'Pagado').reduce((s,f) => s + (f.plan.precio || 0), 0);
+    document.getElementById('hist-total').textContent = totalPlanes;
+    document.getElementById('hist-activos').textContent = activos;
+    document.getElementById('hist-cobrado').textContent = '$' + cobrado.toLocaleString();
+    document.getElementById('hist-pendiente').textContent = '$' + pendiente.toLocaleString();
+
+    if (filtradas.length === 0) {
+      body.innerHTML = ''; empty.style.display = 'block'; return;
+    }
+    empty.style.display = 'none';
+
+    // Ordenar por fechaInicio descendente
+    filtradas.sort((a,b) => (b.plan.fechaInicio || '').localeCompare(a.plan.fechaInicio || ''));
+
+    body.innerHTML = filtradas.map(f => {
+      const p = f.plan;
+      const dias = p.dias || [];
+      const entregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length;
+      const noEntregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && !p.diasEstado[d].entregado && p.diasEstado[d].razon).length;
+      const total = dias.length;
+      const planClass = p.plan === 'Semanal' ? 'plan-semanal' : p.plan === 'Quincenal' ? 'plan-quincenal' : 'plan-mensual';
+      const estadoTexto = p.cerrado ? '<span class="status status-retirado">Cerrado</span>' : (p.activo ? '<span class="status status-activo">Activo</span>' : '<span class="status status-pendiente">—</span>');
+      const pagoTexto = p.estadoPago === 'Pagado' ? '<span class="status status-activo">Pagado</span>' : '<span class="status status-pendiente">Pendiente</span>';
+      return '<tr style="cursor:pointer;" onclick="openPlanDetalle(' + f.idxCliente + ',\'' + p.id + '\')">' +
+        '<td><strong>' + f.cliente.nombre + '</strong></td>' +
+        '<td><span class="plan-badge ' + planClass + '">' + p.plan + '</span></td>' +
+        '<td>' + p.fechaInicio + '</td>' +
+        '<td>' + p.fechaFin + '</td>' +
+        '<td><strong>' + entregados + '/' + total + '</strong>' + (noEntregados > 0 ? ' <span style="color:#FFA000; font-size:10px;">(' + noEntregados + ' no entr.)</span>' : '') + '</td>' +
+        '<td>$' + (p.precio || 0).toLocaleString() + '</td>' +
+        '<td>' + pagoTexto + '</td>' +
+        '<td>' + estadoTexto + '</td>' +
+        '<td><button class="btn btn-small btn-secondary" onclick="event.stopPropagation();openPlanDetalle(' + f.idxCliente + ',\'' + p.id + '\')">Ver</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ===== DETALLE DE PLAN =====
+  function openPlanDetalle(idxCliente, planId) {
+    const c = clients[idxCliente];
+    if (!c) return;
+    const plan = (c.historialPlanes || []).find(p => p.id === planId);
+    if (!plan) return;
+    document.getElementById('planDetalleClienteIdx').value = idxCliente;
+    document.getElementById('planDetallePlanId').value = planId;
+    document.getElementById('planDetalleTitulo').textContent = c.nombre + ' — Plan ' + plan.plan;
+
+    const dias = plan.dias || [];
+    const entregados = dias.filter(d => plan.diasEstado && plan.diasEstado[d] && plan.diasEstado[d].entregado).length;
+    document.getElementById('planDetalleHeader').innerHTML =
+      '<strong>' + plan.plan + '</strong> · ' + plan.fechaInicio + ' → ' + plan.fechaFin + '<br>' +
+      'Precio: $' + (plan.precio || 0).toLocaleString() + ' · Pago: ' + plan.estadoPago + '<br>' +
+      'Entregados: ' + entregados + '/' + dias.length + (plan.cerrado ? ' · <span style="color:var(--rojo);">CERRADO</span>' : '') +
+      (plan.notas ? '<br>Notas: ' + plan.notas : '');
+
+    const razones = ['', 'Cliente no estaba', 'No entregó las cocas', 'Cliente avisó pausa', 'Otro'];
+    const html = dias.map(d => {
+      const est = (plan.diasEstado && plan.diasEstado[d]) || { entregado: false, razon: '' };
+      const fl = parseFechaLocal(d).toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' });
+      const opciones = razones.map(r => '<option value="' + r + '"' + (est.razon === r ? ' selected' : '') + '>' + (r || '— Sin razón —') + '</option>').join('');
+      return '<div style="display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--borde); border-radius:10px; margin-bottom:6px; flex-wrap:wrap;">' +
+        '<div style="flex:1; min-width:160px;"><strong style="text-transform:capitalize; font-size:12px;">' + fl + '</strong><div style="font-size:10px; color:#999;">' + d + '</div></div>' +
+        '<select class="form-input" style="width:auto; padding:6px 10px; font-size:11px;" onchange="setPlanDiaEstado(\'' + d + '\', this.value)">' +
+          '<option value="entregado"' + (est.entregado ? ' selected' : '') + '>✓ Entregado</option>' +
+          '<option value="no_entregado"' + (!est.entregado ? ' selected' : '') + '>✗ No entregado</option>' +
+        '</select>' +
+        '<select class="form-input" style="width:auto; padding:6px 10px; font-size:11px;" ' + (est.entregado ? 'disabled' : '') + ' onchange="setPlanDiaRazon(\'' + d + '\', this.value)">' + opciones + '</select>' +
+        '</div>';
+    }).join('');
+    document.getElementById('planDetalleDias').innerHTML = html || '<div style="color:#999; padding:20px; text-align:center;">Sin días registrados</div>';
+    document.getElementById('planDetalleModal').classList.add('show');
+  }
+
+  function closePlanDetalle() { document.getElementById('planDetalleModal').classList.remove('show'); }
+
+  function setPlanDiaEstado(fecha, valor) {
+    const idx = parseInt(document.getElementById('planDetalleClienteIdx').value);
+    const planId = document.getElementById('planDetallePlanId').value;
+    const c = clients[idx];
+    const plan = c && c.historialPlanes && c.historialPlanes.find(p => p.id === planId);
+    if (!plan) return;
+    if (!plan.diasEstado) plan.diasEstado = {};
+    if (!plan.diasEstado[fecha]) plan.diasEstado[fecha] = { entregado: false, razon: '' };
+    plan.diasEstado[fecha].entregado = (valor === 'entregado');
+    if (valor === 'entregado') {
+      plan.diasEstado[fecha].razon = '';
+      // Sincronizar con deliveries
+      if (!deliveries[fecha]) deliveries[fecha] = {};
+      deliveries[fecha][c.nombre] = true;
+    } else {
+      // Marcar como no entregado en deliveries
+      if (!deliveries[fecha]) deliveries[fecha] = {};
+      deliveries[fecha][c.nombre] = false;
+    }
+    verificarCierrePlan(idx);
+    save();
+    openPlanDetalle(idx, planId); // re-render
+    renderAll();
+  }
+
+  function setPlanDiaRazon(fecha, razon) {
+    const idx = parseInt(document.getElementById('planDetalleClienteIdx').value);
+    const planId = document.getElementById('planDetallePlanId').value;
+    const c = clients[idx];
+    const plan = c && c.historialPlanes && c.historialPlanes.find(p => p.id === planId);
+    if (!plan) return;
+    if (!plan.diasEstado) plan.diasEstado = {};
+    if (!plan.diasEstado[fecha]) plan.diasEstado[fecha] = { entregado: false, razon: '' };
+    plan.diasEstado[fecha].razon = razon;
+    verificarCierrePlan(idx);
+    save();
+    renderAll();
+  }
+
   // ===== RUTA DE DOMICILIO =====
   function getPedidosEventoFecha(fecha) {
     // Devuelve pedidos de eventos de domicilio para esa fecha, normalizados como pseudo-clientes
@@ -3985,11 +4535,12 @@
   }
 
   function getEntregasFecha(fecha) {
-    // Devuelve lista de clientes activos con entrega ese día según su schedule
-    const activos = clients.filter(c => c.estado === 'Activo');
-    const regulares = activos.filter(c => {
-      const sched = getClientSchedule(clients.indexOf(c));
-      return sched.includes(fecha);
+    // Devuelve clientes con plan activo que incluye esta fecha en sus días programados
+    const regulares = clients.filter(c => {
+      if (c.estado !== 'Activo' && c.estado !== 'Por confirmar') return false;
+      const plan = planActivoCliente(c);
+      if (!plan || plan.cerrado) return false;
+      return Array.isArray(plan.dias) && plan.dias.includes(fecha);
     });
     // Sumar pedidos de eventos de esa fecha
     return regulares.concat(getPedidosEventoFecha(fecha));
