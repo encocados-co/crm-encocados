@@ -914,7 +914,7 @@
     <div class="table-container">
       <table>
         <thead>
-          <tr><th>Fecha</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Metodo</th><th>Estado</th></tr>
+          <tr><th>Fecha</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Metodo</th><th>Estado</th><th></th></tr>
         </thead>
         <tbody id="pagosBody"></tbody>
       </table>
@@ -2726,6 +2726,64 @@
     }
   }
 
+  function deletePago(idx) {
+    const p = payments[idx];
+    if (!p) return;
+    let aviso = '¿Eliminar este pago?\n\n' + p.cliente + ' — ' + p.concepto + '\n$' + p.monto.toLocaleString() + ' (' + p.estado + ')';
+    if (p.eventoPedidoRef) aviso += '\n\n⚠️ Este pago vino de un PEDIDO DE EVENTO. Al eliminarlo, el pedido vuelve a "Pendiente".';
+    if (p.planRef) aviso += '\n\n⚠️ Este pago vino de una RENOVACIÓN. Al eliminarlo, el plan vuelve a "Pendiente" de pago.';
+    if (!confirm(aviso)) return;
+
+    // Limpiar referencias bidireccionales
+    if (p.eventoPedidoRef) {
+      eventos.forEach(ev => {
+        (ev.pedidos || []).forEach(ped => {
+          if (ped.pagoRef === p.eventoPedidoRef) {
+            ped.estado = 'Pendiente';
+            delete ped.pagoRef;
+          }
+        });
+      });
+    }
+    if (p.planRef) {
+      clients.forEach(c => {
+        (c.historialPlanes || []).forEach(plan => {
+          if (plan.pagoRef === p.planRef) {
+            plan.estadoPago = 'Pendiente';
+            plan.pagoRef = null;
+          }
+        });
+      });
+    }
+
+    payments.splice(idx, 1);
+    save();
+    renderAll();
+  }
+
+  function togglePagoEstado(idx) {
+    const p = payments[idx];
+    if (!p) return;
+    p.estado = p.estado === 'Pagado' ? 'Pendiente' : 'Pagado';
+    // Sincronizar con plan vinculado si aplica
+    if (p.planRef) {
+      clients.forEach(c => {
+        (c.historialPlanes || []).forEach(plan => {
+          if (plan.pagoRef === p.planRef) plan.estadoPago = p.estado;
+        });
+      });
+    }
+    if (p.eventoPedidoRef) {
+      eventos.forEach(ev => {
+        (ev.pedidos || []).forEach(ped => {
+          if (ped.pagoRef === p.eventoPedidoRef) ped.estado = p.estado;
+        });
+      });
+    }
+    save();
+    renderAll();
+  }
+
   function renderPagos() {
     const body = document.getElementById('pagosBody');
     const empty = document.getElementById('emptyPagos');
@@ -2733,16 +2791,26 @@
     if (payments.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
-    body.innerHTML = payments.map(p => {
-      const rowClass = p.estado === 'Pagado' ? 'pago-pagado' : 'pago-pendiente';
-      return '<tr class="' + rowClass + '">' +
-        '<td>' + p.fecha + '</td>' +
-        '<td><strong>' + p.cliente + '</strong></td>' +
-        '<td>' + p.concepto + '</td>' +
-        '<td style="font-weight:700;">$' + p.monto.toLocaleString() + '</td>' +
-        '<td>' + p.metodo + '</td>' +
-        '<td><span class="status ' + (p.estado === 'Pagado' ? 'status-activo' : 'status-pendiente') + '">' + p.estado + '</span></td></tr>';
-    }).reverse().join('');
+    body.innerHTML = payments.map((p, idx) => ({ p, idx }))
+      .reverse()
+      .map(({ p, idx }) => {
+        const rowClass = p.estado === 'Pagado' ? 'pago-pagado' : 'pago-pendiente';
+        const origenLabel = p.eventoPedidoRef ? ' <span style="font-size:9px;color:#888;">(Evento)</span>'
+          : p.planRef ? ' <span style="font-size:9px;color:#888;">(Renovación)</span>'
+          : '';
+        const toggleLabel = p.estado === 'Pagado' ? 'Marcar pendiente' : 'Marcar pagado';
+        return '<tr class="' + rowClass + '">' +
+          '<td>' + p.fecha + '</td>' +
+          '<td><strong>' + p.cliente + '</strong></td>' +
+          '<td>' + p.concepto + origenLabel + '</td>' +
+          '<td style="font-weight:700;">$' + p.monto.toLocaleString() + '</td>' +
+          '<td>' + p.metodo + '</td>' +
+          '<td><span class="status ' + (p.estado === 'Pagado' ? 'status-activo' : 'status-pendiente') + '" onclick="togglePagoEstado(' + idx + ')" style="cursor:pointer;" title="Click para alternar estado">' + p.estado + '</span></td>' +
+          '<td style="white-space:nowrap;">' +
+            '<button class="btn btn-secondary btn-small" onclick="togglePagoEstado(' + idx + ')" title="' + toggleLabel + '">↻</button> ' +
+            '<button class="btn btn-danger btn-small" onclick="deletePago(' + idx + ')" title="Cancelar / eliminar">✕</button>' +
+          '</td></tr>';
+      }).join('');
 
     const totalPagado = payments.filter(p => p.estado === 'Pagado').reduce((s, p) => s + p.monto, 0);
     const totalPendiente = payments.filter(p => p.estado === 'Pendiente').reduce((s, p) => s + p.monto, 0);
