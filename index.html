@@ -211,6 +211,7 @@
   }
   .status-activo { background: rgba(76,175,80,0.12); color: var(--verde); }
   .status-pendiente { background: rgba(255,152,0,0.12); color: #FFA000; }
+  .status-abonado { background: rgba(229,70,26,0.12); color: #E5461A; }
   .status-confirmado { background: rgba(66,165,245,0.12); color: var(--azul); }
   .status-retirado { background: rgba(229,57,57,0.1); color: var(--rojo); }
 
@@ -1994,8 +1995,9 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Estado del pago</label>
-        <select class="form-input" id="pedEstado">
+        <select class="form-input" id="pedEstado" onchange="actualizarCamposAbono()">
           <option value="Pendiente">Pendiente</option>
+          <option value="Abonado">Abonado</option>
           <option value="Pagado">Pagado</option>
         </select>
       </div>
@@ -2005,6 +2007,17 @@
           <option value="Domicilio">Domicilio</option>
           <option value="Recoge en local">Recoge en local</option>
         </select>
+      </div>
+    </div>
+
+    <div class="form-row" id="filaAbono" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Valor abonado</label>
+        <input type="number" class="form-input" id="pedAbono" placeholder="Ej: 50000" oninput="actualizarSaldoPedido()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Saldo pendiente</label>
+        <input type="text" class="form-input" id="pedSaldo" readonly style="background:#FFF3E0; color:#E5461A; font-weight:700;">
       </div>
     </div>
 
@@ -4065,6 +4078,28 @@
     if (!ev) return;
     const cant = parseInt(document.getElementById('pedCantidad').value) || 0;
     document.getElementById('pedTotal').value = '$' + (cant * ev.precio).toLocaleString();
+    actualizarSaldoPedido();
+  }
+
+  function actualizarCamposAbono() {
+    const estado = document.getElementById('pedEstado').value;
+    const fila = document.getElementById('filaAbono');
+    if (estado === 'Abonado') {
+      fila.style.display = 'flex';
+    } else {
+      fila.style.display = 'none';
+      document.getElementById('pedAbono').value = '';
+    }
+    actualizarSaldoPedido();
+  }
+
+  function actualizarSaldoPedido() {
+    const totalText = document.getElementById('pedTotal').value || '$0';
+    const total = parseInt(totalText.replace(/\D/g, '')) || 0;
+    const abono = parseInt(document.getElementById('pedAbono').value) || 0;
+    const saldo = Math.max(0, total - abono);
+    const saldoEl = document.getElementById('pedSaldo');
+    if (saldoEl) saldoEl.value = '$' + saldo.toLocaleString();
   }
 
   function openPedidoModal(eventoId, pedidoId) {
@@ -4086,7 +4121,9 @@
     document.getElementById('pedBarrio').value = ped ? (ped.barrio || '') : '';
     document.getElementById('pedHora').value = ped ? (ped.hora || '') : '';
     document.getElementById('pedNotas').value = ped ? (ped.notas || '') : '';
+    document.getElementById('pedAbono').value = ped && ped.abono ? ped.abono : '';
     actualizarTotalPedido();
+    actualizarCamposAbono();
     document.getElementById('pedidoEventoModal').classList.add('show');
   }
 
@@ -4102,12 +4139,22 @@
     const cantidad = parseInt(document.getElementById('pedCantidad').value) || 0;
     if (!nombre || cantidad <= 0) { alert('Nombre y cantidad son obligatorios'); return; }
 
+    const estado = document.getElementById('pedEstado').value;
+    const total = cantidad * ev.precio;
+    let abono = 0;
+    if (estado === 'Abonado') {
+      abono = parseInt(document.getElementById('pedAbono').value) || 0;
+      if (abono <= 0) { alert('El valor abonado debe ser mayor a 0'); return; }
+      if (abono >= total) { alert('El abono no puede ser igual o mayor al total. Si ya pagó todo, marca como "Pagado".'); return; }
+    }
+
     const data = {
       cliente: nombre,
       telefono: document.getElementById('pedTelefono').value.trim(),
       cantidad,
-      total: cantidad * ev.precio,
-      estado: document.getElementById('pedEstado').value,
+      total,
+      estado,
+      abono,
       tipoEntrega: document.getElementById('pedTipoEntrega').value,
       direccion: document.getElementById('pedDireccion').value.trim(),
       barrio: document.getElementById('pedBarrio').value.trim(),
@@ -4135,24 +4182,35 @@
   }
 
   function sincronizarPagoEvento(ev, pedido, eraPagado) {
-    // Si esta pagado, asegurarnos de tener una entrada en payments
+    // Determinar monto y concepto segun estado
+    let monto = 0;
+    let concepto = '';
+    const platos = pedido.cantidad + ' plato' + (pedido.cantidad > 1 ? 's' : '');
+
     if (pedido.estado === 'Pagado') {
-      const concepto = 'Evento: ' + ev.nombre + ' — ' + pedido.cantidad + ' plato' + (pedido.cantidad > 1 ? 's' : '');
+      monto = pedido.total;
+      concepto = 'Evento: ' + ev.nombre + ' — ' + platos;
+    } else if (pedido.estado === 'Abonado') {
+      monto = pedido.abono || 0;
+      const saldo = (pedido.total - monto).toLocaleString();
+      concepto = 'Evento: ' + ev.nombre + ' — ' + platos + ' (abono, saldo $' + saldo + ')';
+    }
+
+    if (pedido.estado === 'Pagado' || pedido.estado === 'Abonado') {
       if (pedido.pagoRef) {
-        // actualizar pago existente
         const pIdx = payments.findIndex(p => p.eventoPedidoRef === pedido.pagoRef);
         if (pIdx >= 0) {
           payments[pIdx].cliente = pedido.cliente;
           payments[pIdx].concepto = concepto;
-          payments[pIdx].monto = pedido.total;
+          payments[pIdx].monto = monto;
           payments[pIdx].fecha = ev.fecha;
+          payments[pIdx].estado = 'Pagado';
         } else {
-          // No existe, crear nuevo
           payments.push({
             fecha: ev.fecha,
             cliente: pedido.cliente,
             concepto,
-            monto: pedido.total,
+            monto,
             metodo: 'Evento',
             estado: 'Pagado',
             eventoPedidoRef: pedido.pagoRef
@@ -4165,14 +4223,14 @@
           fecha: ev.fecha,
           cliente: pedido.cliente,
           concepto,
-          monto: pedido.total,
+          monto,
           metodo: 'Evento',
           estado: 'Pagado',
           eventoPedidoRef: ref
         });
       }
     } else {
-      // No pagado: si tenia pago vinculado, eliminarlo
+      // Pendiente: eliminar pago si existia
       if (pedido.pagoRef) {
         eliminarPagoEvento(pedido.pagoRef);
         delete pedido.pagoRef;
@@ -4190,8 +4248,13 @@
     if (!ev) return;
     const ped = (ev.pedidos || []).find(p => p.id === pedidoId);
     if (!ped) return;
+    if (ped.estado === 'Abonado') {
+      alert('Este pedido tiene un abono registrado. Para cambiar el estado, usa el botón Editar.');
+      return;
+    }
     const eraPagado = ped.estado === 'Pagado';
     ped.estado = eraPagado ? 'Pendiente' : 'Pagado';
+    if (ped.estado === 'Pagado') ped.abono = 0;
     sincronizarPagoEvento(ev, ped, eraPagado);
     save(); renderAll();
   }
@@ -4216,8 +4279,14 @@
     eventos.forEach(ev => {
       (ev.pedidos || []).forEach(p => {
         totalPlatos += p.cantidad || 0;
-        if (p.estado === 'Pagado') totalCobrado += p.total || 0;
-        else totalPendiente += p.total || 0;
+        if (p.estado === 'Pagado') {
+          totalCobrado += p.total || 0;
+        } else if (p.estado === 'Abonado') {
+          totalCobrado += p.abono || 0;
+          totalPendiente += (p.total || 0) - (p.abono || 0);
+        } else {
+          totalPendiente += p.total || 0;
+        }
       });
     });
     document.getElementById('ev-total').textContent = eventos.length;
@@ -4234,22 +4303,37 @@
     cont.innerHTML = ordenados.map(ev => {
       const peds = ev.pedidos || [];
       const cantPlatos = peds.reduce((s,p) => s + (p.cantidad||0), 0);
-      const cobr = peds.filter(p => p.estado === 'Pagado').reduce((s,p) => s + (p.total||0), 0);
-      const pend = peds.filter(p => p.estado !== 'Pagado').reduce((s,p) => s + (p.total||0), 0);
+      const cobr = peds.reduce((s,p) => {
+        if (p.estado === 'Pagado') return s + (p.total||0);
+        if (p.estado === 'Abonado') return s + (p.abono||0);
+        return s;
+      }, 0);
+      const pend = peds.reduce((s,p) => {
+        if (p.estado === 'Pendiente') return s + (p.total||0);
+        if (p.estado === 'Abonado') return s + ((p.total||0) - (p.abono||0));
+        return s;
+      }, 0);
       const fechaLeg = parseFechaLocal(ev.fecha).toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
       const filas = peds.length === 0
         ? '<tr><td colspan="7" style="text-align:center; color:var(--gris); padding:18px; font-size:12px;">Sin pedidos. Agrega el primero arriba.</td></tr>'
         : peds.map(p => {
-            const pagado = p.estado === 'Pagado';
+            const statusClass = p.estado === 'Pagado' ? 'status-activo'
+              : p.estado === 'Abonado' ? 'status-abonado'
+              : 'status-pendiente';
             const tel = p.telefono ? '<a href="https://wa.me/57' + p.telefono.replace(/\D/g,'') + '" target="_blank" style="color:#25D366; font-weight:700; text-decoration:none;">' + p.telefono + '</a>' : '—';
-            return '<tr style="' + (pagado ? '' : '') + '">' +
+            const totalCell = p.estado === 'Abonado'
+              ? '<strong>$' + (p.total||0).toLocaleString() + '</strong>' +
+                '<div style="font-size:10px; color:var(--naranja); font-weight:600;">Abonó $' + (p.abono||0).toLocaleString() + '</div>' +
+                '<div style="font-size:10px; color:#FFA000;">Saldo $' + ((p.total||0) - (p.abono||0)).toLocaleString() + '</div>'
+              : '<strong>$' + (p.total||0).toLocaleString() + '</strong>';
+            return '<tr>' +
               '<td><strong>' + p.cliente + '</strong>' + (p.notas ? '<div style="font-size:10px; color:#999;">' + p.notas + '</div>' : '') + '</td>' +
               '<td>' + tel + '</td>' +
               '<td><strong>' + p.cantidad + '</strong></td>' +
-              '<td><strong>$' + (p.total||0).toLocaleString() + '</strong></td>' +
+              '<td>' + totalCell + '</td>' +
               '<td>' + (p.tipoEntrega || 'Domicilio') + (p.barrio ? '<div style="font-size:10px; color:#999;">' + p.barrio + '</div>' : '') + '</td>' +
-              '<td><span class="status ' + (pagado ? 'status-activo' : 'status-pendiente') + '" onclick="togglePagoPedido(\'' + ev.id + '\',\'' + p.id + '\')" style="cursor:pointer;" title="Click para alternar">' + p.estado + '</span></td>' +
+              '<td><span class="status ' + statusClass + '" onclick="togglePagoPedido(\'' + ev.id + '\',\'' + p.id + '\')" style="cursor:pointer;" title="Click para alternar Pendiente/Pagado · Para abonar usa Editar">' + p.estado + '</span></td>' +
               '<td style="white-space:nowrap;">' +
                 '<button class="btn btn-small btn-secondary" onclick="openPedidoModal(\'' + ev.id + '\',\'' + p.id + '\')">Editar</button> ' +
                 '<button class="btn btn-small btn-danger" onclick="deletePedido(\'' + ev.id + '\',\'' + p.id + '\')">×</button>' +
