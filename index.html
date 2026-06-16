@@ -202,6 +202,7 @@
   .plan-semanal { background: rgba(229,70,26,0.1); color: #E5461A; }
   .plan-quincenal { background: rgba(188,194,220,0.25); color: #7A80A0; }
   .plan-mensual { background: rgba(245,202,133,0.2); color: #B8860B; }
+  .plan-individual { background: rgba(26,26,26,0.08); color: #1A1A1A; }
 
   /* STATUS */
   .status {
@@ -780,7 +781,7 @@
   <div class="page active" id="page-dashboard">
     <div class="page-header">
       <div class="page-title">Dashboard</div>
-      <div style="font-size:12px; color:var(--gris);">Semana de lanzamiento | 20-24 Abril 2026</div>
+      <div style="font-size:12px; color:var(--gris);" id="dash-semana-label">Semana actual</div>
     </div>
 
     <div class="stats-grid">
@@ -790,9 +791,13 @@
         <div class="stat-sub" id="dash-planes">0 sem · 0 quin · 0 men</div>
       </div>
       <div class="stat-card terra">
-        <div class="stat-label">Ingresos Semana</div>
+        <div class="stat-label">Ingresos</div>
         <div class="stat-value" id="dash-ingresos">$0</div>
-        <div class="stat-sub">Planes + Kits</div>
+        <div class="stat-sub" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+          <input type="date" id="dash-ing-desde" onchange="renderDashboard()" style="font-size:10px; padding:2px 4px; border:1px solid var(--borde); border-radius:6px; background:#fff;">
+          <input type="date" id="dash-ing-hasta" onchange="renderDashboard()" style="font-size:10px; padding:2px 4px; border:1px solid var(--borde); border-radius:6px; background:#fff;">
+          <button onclick="resetIngresosSemana()" style="font-size:10px; padding:2px 6px; border:1px solid var(--borde); border-radius:6px; background:#fff; cursor:pointer;">↺ semana</button>
+        </div>
       </div>
       <div class="stat-card dorado">
         <div class="stat-label">Entregas Hoy</div>
@@ -808,7 +813,7 @@
 
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
       <div class="table-container" style="padding:20px;">
-        <div class="table-title" style="margin-bottom:14px;">Menu Semana Lanzamiento</div>
+        <div class="table-title" style="margin-bottom:14px;" id="dash-menu-title">Menú de la Semana</div>
         <div id="dash-menu"></div>
       </div>
       <div class="table-container" style="padding:20px;">
@@ -912,6 +917,16 @@
       </div>
     </div>
 
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+      <label style="font-size:11px; color:var(--gris);">Desde</label>
+      <input type="date" id="pago-desde" onchange="renderPagos()" style="font-size:12px; padding:5px 7px; border:1px solid var(--borde); border-radius:6px; background:#fff;">
+      <label style="font-size:11px; color:var(--gris);">Hasta</label>
+      <input type="date" id="pago-hasta" onchange="renderPagos()" style="font-size:12px; padding:5px 7px; border:1px solid var(--borde); border-radius:6px; background:#fff;">
+      <input type="text" id="pago-buscar" placeholder="🔍 Concepto..." oninput="renderPagos()" style="font-size:12px; padding:5px 9px; border:1px solid var(--borde); border-radius:6px; background:#fff; min-width:140px;">
+      <select id="pago-metodo" onchange="renderPagos()" style="font-size:12px; padding:5px 7px; border:1px solid var(--borde); border-radius:6px; background:#fff;"><option value="todos">Todos los métodos</option></select>
+      <button onclick="resetPagosFiltro()" class="btn btn-secondary btn-small">↺ Limpiar</button>
+    </div>
+
     <div class="table-container">
       <table>
         <thead>
@@ -936,21 +951,30 @@
 
     <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
       <div class="stat-card verde">
-        <div class="stat-label">Ingresos (mes)</div>
+        <div class="stat-label">Ingresos (rango)</div>
         <div class="stat-value" id="fin-ingresos">$0</div>
       </div>
       <div class="stat-card terra">
-        <div class="stat-label">Egresos (mes)</div>
+        <div class="stat-label">Egresos (rango)</div>
         <div class="stat-value" id="fin-egresos">$0</div>
       </div>
       <div class="stat-card menta">
-        <div class="stat-label">Balance (mes)</div>
+        <div class="stat-label">Balance (rango)</div>
         <div class="stat-value" id="fin-balance">$0</div>
       </div>
       <div class="stat-card dorado">
         <div class="stat-label">Compras totales</div>
         <div class="stat-value" id="fin-count">0</div>
       </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
+      <label style="font-size:11px; color:var(--gris);">Desde</label>
+      <input type="date" id="fin-desde" onchange="renderFinanciero()" style="font-size:12px; padding:5px 7px; border:1px solid var(--borde); border-radius:6px; background:#fff;">
+      <label style="font-size:11px; color:var(--gris);">Hasta</label>
+      <input type="date" id="fin-hasta" onchange="renderFinanciero()" style="font-size:12px; padding:5px 7px; border:1px solid var(--borde); border-radius:6px; background:#fff;">
+      <input type="text" id="fin-buscar" placeholder="🔍 Concepto..." oninput="renderFinanciero()" style="font-size:12px; padding:5px 9px; border:1px solid var(--borde); border-radius:6px; background:#fff; min-width:140px;">
+      <button onclick="resetFinancieroFiltro()" class="btn btn-secondary btn-small">↺ Limpiar</button>
     </div>
 
     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
@@ -1099,7 +1123,7 @@
         <div class="stat-value" id="ev-platos">0</div>
       </div>
       <div class="stat-card verde">
-        <div class="stat-label">Ingresos cobrados</div>
+        <div class="stat-label">Cobrado (todos los eventos)</div>
         <div class="stat-value" id="ev-ingresos">$0</div>
       </div>
       <div class="stat-card dorado">
@@ -1156,12 +1180,15 @@
         <option value="Pagado">Pagados</option>
         <option value="Pendiente">Pendientes</option>
       </select>
+      <input type="date" class="form-input" id="histDesde" onchange="renderHistorial()" style="width:auto;" title="Desde (fecha inicio del plan)">
+      <input type="date" class="form-input" id="histHasta" onchange="renderHistorial()" style="width:auto;" title="Hasta (fecha inicio del plan)">
+      <button onclick="resetHistFiltro()" class="btn btn-secondary btn-small">↺ Limpiar</button>
     </div>
 
     <div class="table-container">
       <table>
         <thead>
-          <tr><th>Cliente</th><th>Plan</th><th>Fecha inicio</th><th>Fecha fin</th><th>Entregados</th><th>Precio</th><th>Pago</th><th>Estado</th><th></th></tr>
+          <tr><th>Cliente</th><th>Planes</th><th>Total comprado</th><th>Entregados</th><th>Estado</th><th></th></tr>
         </thead>
         <tbody id="historialBody"></tbody>
       </table>
@@ -1442,6 +1469,7 @@
           <option value="Semanal">Semanal — $90.000</option>
           <option value="Quincenal">Quincenal — $170.000</option>
           <option value="Mensual">Mensual — $320.000</option>
+          <option value="Individual">Almuerzos individuales — $18.000 c/u</option>
         </select>
       </div>
     </div>
@@ -1521,11 +1549,19 @@
           <option value="Semanal">Semanal — $90.000 (5 días)</option>
           <option value="Quincenal">Quincenal — $170.000 (10 días)</option>
           <option value="Mensual">Mensual — $320.000 (20 días)</option>
+          <option value="Individual">Almuerzos individuales — $18.000 c/u</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Fecha de inicio</label>
         <input type="date" class="form-input" id="rFechaInicio" onchange="renovarRecalcular()">
+      </div>
+    </div>
+
+    <div class="form-row" id="rCantidadRow" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Cantidad de almuerzos</label>
+        <input type="number" class="form-input" id="rCantidadIndividual" min="1" value="1" oninput="renovarRecalcular()">
       </div>
     </div>
 
@@ -1601,16 +1637,42 @@
       <div class="form-group">
         <label class="form-label">Concepto</label>
         <select class="form-input" id="pConcepto" onchange="updateMonto()">
-          <option value="Plan Semanal">Plan Semanal</option>
-          <option value="Plan Quincenal">Plan Quincenal</option>
-          <option value="Plan Mensual">Plan Mensual</option>
-          <option value="Kit Cocas">Kit Cocas ($80.000)</option>
-          <option value="Kit Cocas dto">Kit Cocas dto 20% ($64.000)</option>
+          <optgroup label="Almuerzo">
+            <option value="Plan Semanal">Plan Semanal ($90.000)</option>
+            <option value="Plan Quincenal">Plan Quincenal ($170.000)</option>
+            <option value="Plan Mensual">Plan Mensual ($320.000)</option>
+          </optgroup>
+          <optgroup label="Desayuno">
+            <option value="Desayuno Semanal">Desayuno Semanal ($60.000)</option>
+            <option value="Desayuno Quincenal">Desayuno Quincenal ($110.000)</option>
+            <option value="Desayuno Mensual">Desayuno Mensual ($200.000)</option>
+          </optgroup>
+          <optgroup label="Combo desayuno + almuerzo">
+            <option value="Combo Semanal">Combo Semanal ($150.000)</option>
+            <option value="Combo Quincenal">Combo Quincenal ($280.000)</option>
+            <option value="Combo Mensual">Combo Mensual ($520.000)</option>
+          </optgroup>
+          <optgroup label="Cocas">
+            <option value="Kit Cocas">Kit Cocas ($80.000)</option>
+            <option value="Kit Cocas dto">Kit Cocas dto 20% ($64.000)</option>
+            <option value="Set cocas desayuno">Set cocas desayuno ($52.000)</option>
+          </optgroup>
+          <optgroup label="Otros">
+            <option value="Adicional domicilio">Adicional domicilio</option>
+            <option value="Otro">Otro / servicio personalizado…</option>
+          </optgroup>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Monto</label>
         <input type="number" class="form-input" id="pMonto" value="90000">
+      </div>
+    </div>
+
+    <div class="form-row" id="pOtroRow" style="display:none;">
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Nombre del servicio personalizado</label>
+        <input type="text" class="form-input" id="pConceptoOtro" placeholder="Ej: Postre adicional, Almuerzo extra, Servicio desayuno…">
       </div>
     </div>
 
@@ -2240,14 +2302,6 @@
   const PRECIOS = { 'Semanal': 90000, 'Quincenal': 170000, 'Mensual': 320000 };
   const DIAS_PLAN = { 'Semanal': 5, 'Quincenal': 10, 'Mensual': 20 };
 
-  const MENU = [
-    { dia: 'lunes', label: 'Lunes 20', plato: 'Lomo de cerdo en julianas', nivel: 'Simple', sopa: 'Sopa de guineo', ensalada: 'Dulce Tropical', bebida: 'Guandolo' },
-    { dia: 'martes', label: 'Martes 21', plato: 'Ceviche chicharron y chorizo', nivel: 'Intermedio', sopa: 'Crema tomate albahaca', ensalada: 'Mexicana', bebida: 'Frutos rojos' },
-    { dia: 'miercoles', label: 'Miercoles 22', plato: 'Pasta salsa blanca, pollo y tocineta', nivel: 'Intermedio', sopa: 'Crema de ahuyama', ensalada: 'Fresca Tropical', bebida: 'Guandolo' },
-    { dia: 'jueves', label: 'Jueves 23', plato: 'Lasagna de carne + Croissant', nivel: 'Premium', sopa: 'Croissant x2', ensalada: 'Del Chef', bebida: 'Frutos amarillos' },
-    { dia: 'viernes', label: 'Viernes 24', plato: 'Costilla glaseada BBQ y panela', nivel: 'Premium', sopa: 'Sopa verduras', ensalada: 'Clasica Fresca', bebida: 'Limonada cereza' }
-  ];
-
   async function save() {
     if (!window._fb || !window.currentUser) {
       console.warn('No hay sesión activa, no se puede guardar.');
@@ -2382,13 +2436,15 @@
 
     empty.style.display = 'none';
     body.innerHTML = filtered.map((c, i) => {
-      const planClass = c.plan === 'Semanal' ? 'plan-semanal' : c.plan === 'Quincenal' ? 'plan-quincenal' : 'plan-mensual';
+      const planClass = c.plan === 'Semanal' ? 'plan-semanal' : c.plan === 'Quincenal' ? 'plan-quincenal' : c.plan === 'Individual' ? 'plan-individual' : 'plan-mensual';
       const statusClass = c.estado === 'Activo' ? 'status-activo' : c.estado === 'Por confirmar' ? 'status-pendiente' : 'status-retirado';
       const delivClass = c.entrega === 'Domicilio dia' ? 'delivery-dia' : 'delivery-noche';
       const idx = clients.indexOf(c);
-      const vence = c.inicio ? calcVence(c.inicio, c.plan) : '—';
       const schedule = getClientSchedule(idx);
-      const totalAlm = DIAS_PLAN[c.plan] || 5;
+      const vence = c.plan === 'Individual'
+        ? (schedule.length ? parseFechaLocal(schedule[schedule.length - 1]).toLocaleDateString('es-CO') : '—')
+        : (c.inicio ? calcVence(c.inicio, c.plan) : '—');
+      const totalAlm = c.plan === 'Individual' ? schedule.length : (DIAS_PLAN[c.plan] || 5);
       const entregados = schedule.filter(d => {
         const key = d.replace(/-/g, '');
         return deliveries[d] && deliveries[d][c.nombre];
@@ -2413,6 +2469,23 @@
     }).join('');
   }
 
+  function semanaActualRango() {
+    const hoy = parseFechaLocal(hoyISO());
+    const dow = hoy.getDay(); // 0=domingo
+    const offsetLunes = dow === 0 ? -6 : 1 - dow;
+    const lunes = new Date(hoy); lunes.setDate(hoy.getDate() + offsetLunes);
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    return { desde: fmt(lunes), hasta: fmt(domingo) };
+  }
+
+  function resetIngresosSemana() {
+    const r = semanaActualRango();
+    document.getElementById('dash-ing-desde').value = r.desde;
+    document.getElementById('dash-ing-hasta').value = r.hasta;
+    renderDashboard();
+  }
+
   function renderDashboard() {
     const activos = clients.filter(c => c.estado === 'Activo' || c.estado === 'Por confirmar');
     const sem = activos.filter(c => c.plan === 'Semanal').length;
@@ -2422,7 +2495,19 @@
     document.getElementById('dash-clientes').textContent = activos.length;
     document.getElementById('dash-planes').textContent = sem + ' sem · ' + quin + ' quin · ' + men + ' men';
 
-    const totalIngresos = payments.filter(p => p.estado === 'Pagado').reduce((s, p) => s + p.monto, 0);
+    // Ingresos filtrados por rango de fechas (default: semana actual lunes-domingo)
+    const ingDesdeEl = document.getElementById('dash-ing-desde');
+    const ingHastaEl = document.getElementById('dash-ing-hasta');
+    if (!ingDesdeEl.value || !ingHastaEl.value) {
+      const r = semanaActualRango();
+      ingDesdeEl.value = r.desde;
+      ingHastaEl.value = r.hasta;
+    }
+    const ingDesde = ingDesdeEl.value;
+    const ingHasta = ingHastaEl.value;
+    const totalIngresos = payments
+      .filter(p => p.estado === 'Pagado' && p.fecha && p.fecha >= ingDesde && p.fecha <= ingHasta)
+      .reduce((s, p) => s + p.monto, 0);
     document.getElementById('dash-ingresos').textContent = '$' + totalIngresos.toLocaleString();
 
     document.getElementById('dash-eco').textContent = activos.length * 5 * 4;
@@ -2433,15 +2518,37 @@
     const doneHoy = Object.keys(delivHoy).filter(k => !k.startsWith('_') && delivHoy[k] === true).length;
     document.getElementById('dash-entregas').textContent = doneHoy + '/' + activos.length;
 
-    // Menu
+    // Menu activo de la semana actual
+    const menuActual = findMenuForDate(hoyISO());
     let menuHtml = '';
-    MENU.forEach(m => {
-      const nivelClass = m.nivel === 'Simple' ? 'nivel-simple' : m.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
-      menuHtml += '<div style="padding:8px 0; border-bottom:1px solid var(--borde); display:flex; align-items:center; justify-content:space-between;">' +
-        '<div><strong style="font-size:12px;">' + m.label + '</strong><br><span style="font-size:11px;color:var(--gris);">' + m.plato + '</span></div>' +
-        '<span class="nivel-badge ' + nivelClass + '">' + m.nivel + '</span></div>';
-    });
+    if (menuActual && Array.isArray(menuActual.dias) && menuActual.dias.length) {
+      menuActual.dias.forEach(d => {
+        const nivelClass = d.nivel === 'Simple' ? 'nivel-simple' : d.nivel === 'Intermedio' ? 'nivel-intermedio' : 'nivel-premium';
+        const platoParts = [];
+        if (d.proteina) platoParts.push(d.proteina);
+        else if (d.seco) platoParts.push(d.seco);
+        if (d.guarnicion1) platoParts.push(d.guarnicion1);
+        if (d.guarnicion2) platoParts.push(d.guarnicion2);
+        const plato = platoParts.join(' + ') || '—';
+        menuHtml += '<div style="padding:8px 0; border-bottom:1px solid var(--borde); display:flex; align-items:center; justify-content:space-between;">' +
+          '<div><strong style="font-size:12px; text-transform:capitalize;">' + d.dia + '</strong><br><span style="font-size:11px;color:var(--gris);">' + plato + '</span></div>' +
+          '<span class="nivel-badge ' + nivelClass + '">' + (d.nivel || '') + '</span></div>';
+      });
+    } else {
+      menuHtml = '<p style="color:var(--gris); font-size:12px; text-align:center; padding:20px;">No hay menú creado para esta semana</p>';
+    }
     document.getElementById('dash-menu').innerHTML = menuHtml;
+
+    // Titulo del panel de menu con la fecha de inicio de la semana
+    const menuTitleEl = document.getElementById('dash-menu-title');
+    if (menuTitleEl) {
+      if (menuActual && menuActual.fecha) {
+        const ini = parseFechaLocal(menuActual.fecha).toLocaleDateString('es-CO', { day:'numeric', month:'long' });
+        menuTitleEl.textContent = 'Menú de la Semana · ' + ini;
+      } else {
+        menuTitleEl.textContent = 'Menú de la Semana';
+      }
+    }
 
     // Ultimos pagos
     const ultPagos = payments.slice(-5).reverse();
@@ -2452,6 +2559,14 @@
         '<span style="font-size:13px; font-weight:700; color:' + (p.estado === 'Pagado' ? 'var(--verde)' : '#FFA000') + ';">$' + p.monto.toLocaleString() + '</span></div>';
     });
     document.getElementById('dash-pagos').innerHTML = pagosHtml || '<p style="color:var(--gris); font-size:12px; text-align:center; padding:20px;">Sin pagos</p>';
+
+    // Encabezado: semana actual dinamica
+    const semLabelEl = document.getElementById('dash-semana-label');
+    if (semLabelEl) {
+      const rs = semanaActualRango();
+      const fmtCorto = iso => parseFechaLocal(iso).toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+      semLabelEl.textContent = 'Semana actual | ' + fmtCorto(rs.desde) + ' – ' + fmtCorto(rs.hasta);
+    }
   }
 
   // ===== HISTORIAL DE PLANES =====
@@ -2471,7 +2586,7 @@
         const dias = getClientSchedule(idx);
         const fechaInicio = c.inicio || (dias[0] || hoyISO());
         const fechaFin = dias.length > 0 ? dias[dias.length - 1] : fechaInicio;
-        const precio = PRECIOS[c.plan] || 0;
+        const precio = c.plan === 'Individual' ? 18000 * dias.length : (PRECIOS[c.plan] || 0);
         const diasEstado = {};
         dias.forEach(d => {
           diasEstado[d] = {
@@ -2797,16 +2912,47 @@
     renderAll();
   }
 
+  function poblarMetodoPagos() {
+    const sel = document.getElementById('pago-metodo');
+    if (!sel) return;
+    const actual = sel.value || 'todos';
+    const metodos = Array.from(new Set(payments.map(p => p.metodo).filter(Boolean))).sort();
+    sel.innerHTML = '<option value="todos">Todos los métodos</option>' + metodos.map(m => '<option value="' + m + '">' + m + '</option>').join('');
+    sel.value = (actual === 'todos' || metodos.includes(actual)) ? actual : 'todos';
+  }
+
+  function resetPagosFiltro() {
+    ['pago-desde','pago-hasta','pago-buscar'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const sel = document.getElementById('pago-metodo'); if (sel) sel.value = 'todos';
+    renderPagos();
+  }
+
   function renderPagos() {
     const body = document.getElementById('pagosBody');
     const empty = document.getElementById('emptyPagos');
+    if (!body) return;
 
-    if (payments.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
+    poblarMetodoPagos();
 
-    body.innerHTML = payments.map((p, idx) => ({ p, idx }))
-      .reverse()
-      .map(({ p, idx }) => {
+    const desde = (document.getElementById('pago-desde') || {}).value || '';
+    const hasta = (document.getElementById('pago-hasta') || {}).value || '';
+    const buscar = ((document.getElementById('pago-buscar') || {}).value || '').toLowerCase();
+    const metodo = (document.getElementById('pago-metodo') || {}).value || 'todos';
+
+    const filtrados = payments.map((p, idx) => ({ p, idx })).filter(({ p }) => {
+      if (desde && (!p.fecha || p.fecha < desde)) return false;
+      if (hasta && (!p.fecha || p.fecha > hasta)) return false;
+      if (buscar && !((p.concepto || '').toLowerCase().includes(buscar) || (p.cliente || '').toLowerCase().includes(buscar))) return false;
+      if (metodo !== 'todos' && p.metodo !== metodo) return false;
+      return true;
+    });
+
+    if (filtrados.length === 0) {
+      body.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      body.innerHTML = filtrados.slice().reverse().map(({ p, idx }) => {
         const rowClass = p.estado === 'Pagado' ? 'pago-pagado' : 'pago-pendiente';
         const origenLabel = p.eventoPedidoRef ? ' <span style="font-size:9px;color:#888;">(Evento)</span>'
           : p.planRef ? ' <span style="font-size:9px;color:#888;">(Renovación)</span>'
@@ -2824,10 +2970,11 @@
             '<button class="btn btn-danger btn-small" onclick="deletePago(' + idx + ')" title="Cancelar / eliminar">✕</button>' +
           '</td></tr>';
       }).join('');
+    }
 
-    const totalPagado = payments.filter(p => p.estado === 'Pagado').reduce((s, p) => s + p.monto, 0);
-    const totalPendiente = payments.filter(p => p.estado === 'Pendiente').reduce((s, p) => s + p.monto, 0);
-    const totalKits = payments.filter(p => p.concepto.includes('Kit')).reduce((s, p) => s + p.monto, 0);
+    const totalPagado = filtrados.filter(({ p }) => p.estado === 'Pagado').reduce((s, { p }) => s + p.monto, 0);
+    const totalPendiente = filtrados.filter(({ p }) => p.estado === 'Pendiente').reduce((s, { p }) => s + p.monto, 0);
+    const totalKits = filtrados.filter(({ p }) => (p.concepto || '').includes('Kit')).reduce((s, { p }) => s + p.monto, 0);
 
     document.getElementById('pago-total').textContent = '$' + totalPagado.toLocaleString();
     document.getElementById('pago-pendiente').textContent = '$' + totalPendiente.toLocaleString();
@@ -2844,14 +2991,32 @@
     renderFinanciero();
   }
 
+  function rangoFinanciero() {
+    const d = (document.getElementById('fin-desde') || {}).value || '';
+    const h = (document.getElementById('fin-hasta') || {}).value || '';
+    if (d || h) return { desde: d || '0000-01-01', hasta: h || '9999-12-31' };
+    // Por defecto: mes actual
+    const mes = new Date().toISOString().slice(0,7);
+    return { desde: mes + '-01', hasta: mes + '-31' };
+  }
+
+  function resetFinancieroFiltro() {
+    ['fin-desde','fin-hasta','fin-buscar'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderFinanciero();
+  }
+
   function renderFinanciero() {
     const body = document.getElementById('comprasBody');
     const empty = document.getElementById('emptyCompras');
-    const mesActual = new Date().toISOString().slice(0,7);
+    const r = rangoFinanciero();
+    const buscar = ((document.getElementById('fin-buscar') || {}).value || '').toLowerCase();
 
-    const comprasFiltradas = filtroCompraCategoria === 'todas'
-      ? compras
-      : compras.filter(c => c.categoria === filtroCompraCategoria);
+    const comprasFiltradas = compras.filter(c => {
+      if (filtroCompraCategoria !== 'todas' && c.categoria !== filtroCompraCategoria) return false;
+      if (!c.fecha || c.fecha < r.desde || c.fecha > r.hasta) return false;
+      if (buscar && !((c.concepto || '').toLowerCase().includes(buscar) || (c.proveedor || '').toLowerCase().includes(buscar))) return false;
+      return true;
+    });
 
     if (comprasFiltradas.length === 0) {
       body.innerHTML = '';
@@ -2859,7 +3024,7 @@
     } else {
       empty.style.display = 'none';
       body.innerHTML = comprasFiltradas
-        .map((c, origIdx) => ({ c, origIdx: compras.indexOf(c) }))
+        .map(c => ({ c, origIdx: compras.indexOf(c) }))
         .sort((a, b) => b.c.fecha.localeCompare(a.c.fecha))
         .map(({ c, origIdx }) => {
           return '<tr>' +
@@ -2877,21 +3042,19 @@
         }).join('');
     }
 
-    // Stats
-    const ingresosMes = payments
-      .filter(p => p.estado === 'Pagado' && p.fecha.startsWith(mesActual))
+    // Stats por rango
+    const ingresos = payments
+      .filter(p => p.estado === 'Pagado' && p.fecha && p.fecha >= r.desde && p.fecha <= r.hasta)
       .reduce((s, p) => s + p.monto, 0);
-    const egresosMes = compras
-      .filter(c => c.fecha.startsWith(mesActual))
-      .reduce((s, c) => s + (c.monto || 0), 0);
-    const balance = ingresosMes - egresosMes;
+    const egresos = comprasFiltradas.reduce((s, c) => s + (c.monto || 0), 0);
+    const balance = ingresos - egresos;
 
-    document.getElementById('fin-ingresos').textContent = '$' + ingresosMes.toLocaleString();
-    document.getElementById('fin-egresos').textContent = '$' + egresosMes.toLocaleString();
+    document.getElementById('fin-ingresos').textContent = '$' + ingresos.toLocaleString();
+    document.getElementById('fin-egresos').textContent = '$' + egresos.toLocaleString();
     const balanceEl = document.getElementById('fin-balance');
     balanceEl.textContent = (balance >= 0 ? '$' : '-$') + Math.abs(balance).toLocaleString();
     balanceEl.style.color = balance >= 0 ? '#4a7c5e' : '#C73A14';
-    document.getElementById('fin-count').textContent = compras.length;
+    document.getElementById('fin-count').textContent = comprasFiltradas.length;
   }
 
   function openCompraModal() {
@@ -3134,12 +3297,16 @@
   let calViewMonth = 3; // april = 3 (0-indexed)
   let calViewYear = 2026;
 
+  function maxDiasPlan(plan) {
+    return plan === 'Individual' ? 999 : (DIAS_PLAN[plan] || 5);
+  }
+
   function renderCalendar() {
     const grid = document.getElementById('calGrid');
     if (!grid) return;
     const plan = document.getElementById('fPlan').value;
-    const maxDays = DIAS_PLAN[plan] || 5;
-    document.getElementById('calMax').textContent = maxDays;
+    const maxDays = maxDiasPlan(plan);
+    document.getElementById('calMax').textContent = plan === 'Individual' ? '∞' : maxDays;
     document.getElementById('calCount').textContent = calSelectedDays.length;
 
     const year = calViewYear;
@@ -3184,7 +3351,7 @@
 
   function toggleCalDay(iso) {
     const plan = document.getElementById('fPlan').value;
-    const maxDays = DIAS_PLAN[plan] || 5;
+    const maxDays = maxDiasPlan(plan);
     const idx = calSelectedDays.indexOf(iso);
     if (idx > -1) {
       calSelectedDays.splice(idx, 1);
@@ -3287,7 +3454,7 @@
     const direcciones = formDirecciones.filter((d, i) => i === 0 || d.direccion.trim());
 
     const plan = document.getElementById('fPlan').value;
-    const maxDays = DIAS_PLAN[plan] || 5;
+    const maxDays = maxDiasPlan(plan);
 
     if (calSelectedDays.length === 0) {
       alert('Selecciona al menos 1 dia de entrega en el calendario');
@@ -3529,6 +3696,7 @@
     const sel = document.getElementById('pCliente');
     sel.innerHTML = clients.map(c => '<option value="' + c.nombre + '">' + c.nombre + '</option>').join('');
     document.getElementById('pFecha').value = new Date().toISOString().split('T')[0];
+    const otro = document.getElementById('pConceptoOtro'); if (otro) otro.value = '';
     updateMonto();
   }
 
@@ -3536,16 +3704,31 @@
 
   function updateMonto() {
     const concepto = document.getElementById('pConcepto').value;
-    const montos = { 'Plan Semanal': 90000, 'Plan Quincenal': 170000, 'Plan Mensual': 320000, 'Kit Cocas': 80000, 'Kit Cocas dto': 64000 };
-    document.getElementById('pMonto').value = montos[concepto] || 90000;
+    const montos = {
+      'Plan Semanal': 90000, 'Plan Quincenal': 170000, 'Plan Mensual': 320000,
+      'Desayuno Semanal': 60000, 'Desayuno Quincenal': 110000, 'Desayuno Mensual': 200000,
+      'Combo Semanal': 150000, 'Combo Quincenal': 280000, 'Combo Mensual': 520000,
+      'Kit Cocas': 80000, 'Kit Cocas dto': 64000, 'Set cocas desayuno': 52000,
+      'Adicional domicilio': 0, 'Otro': 0
+    };
+    const otroRow = document.getElementById('pOtroRow');
+    if (otroRow) otroRow.style.display = (concepto === 'Otro') ? 'flex' : 'none';
+    if (concepto in montos) document.getElementById('pMonto').value = montos[concepto];
   }
 
   function savePayment() {
+    let concepto = document.getElementById('pConcepto').value;
+    if (concepto === 'Otro') {
+      concepto = (document.getElementById('pConceptoOtro').value || '').trim();
+      if (!concepto) { alert('Escribe el nombre del servicio personalizado'); return; }
+    }
+    const monto = parseInt(document.getElementById('pMonto').value);
+    if (!monto || monto <= 0) { alert('Ingresa un monto válido (mayor a 0)'); return; }
     const payment = {
       fecha: document.getElementById('pFecha').value,
       cliente: document.getElementById('pCliente').value,
-      concepto: document.getElementById('pConcepto').value,
-      monto: parseInt(document.getElementById('pMonto').value),
+      concepto: concepto,
+      monto: monto,
       metodo: document.getElementById('pMetodo').value,
       estado: document.getElementById('pEstado').value
     };
@@ -4405,6 +4588,7 @@
     document.getElementById('rFechaInicio').value = sugerida;
     document.getElementById('rEstadoPago').value = 'Pendiente';
     document.getElementById('rNotas').value = '';
+    document.getElementById('rCantidadIndividual').value = '1';
     renovarRecalcular();
     document.getElementById('renovarModal').classList.add('show');
   }
@@ -4414,10 +4598,19 @@
   function renovarRecalcular() {
     const plan = document.getElementById('rPlan').value;
     const fecha = document.getElementById('rFechaInicio').value;
+    const esIndividual = plan === 'Individual';
+    document.getElementById('rCantidadRow').style.display = esIndividual ? '' : 'none';
     if (!fecha) return;
-    const cantidad = DIAS_PLAN[plan] || 5;
+    let cantidad, precioDefault;
+    if (esIndividual) {
+      cantidad = Math.max(1, parseInt(document.getElementById('rCantidadIndividual').value) || 1);
+      precioDefault = 18000 * cantidad;
+    } else {
+      cantidad = DIAS_PLAN[plan] || 5;
+      precioDefault = PRECIOS[plan] || 0;
+    }
     const dias = calcDiasHabilesDesde(fecha, cantidad);
-    document.getElementById('rPrecio').value = PRECIOS[plan] || 0;
+    document.getElementById('rPrecio').value = precioDefault;
     const preview = dias.map(d => {
       const fl = parseFechaLocal(d).toLocaleDateString('es-CO', { weekday:'short', day:'numeric', month:'short' });
       return '<span style="display:inline-block; background:#fff; border:1px solid var(--borde); padding:4px 8px; margin:2px; border-radius:6px; font-size:11px; text-transform:capitalize;">' + fl + '</span>';
@@ -4445,6 +4638,9 @@
     const precio = parseInt(document.getElementById('rPrecio').value) || 0;
     const estadoPago = document.getElementById('rEstadoPago').value;
     const notas = document.getElementById('rNotas').value.trim();
+    const conceptoPago = plan === 'Individual'
+      ? 'Almuerzos individuales x' + dias.length + ' (' + fechaInicio + ' → ' + fechaFin + ')'
+      : 'Plan ' + plan + ' (' + fechaInicio + ' → ' + fechaFin + ')';
 
     // Cerrar plan vigente
     if (planVig) {
@@ -4479,7 +4675,7 @@
       payments.push({
         fecha: fechaInicio,
         cliente: c.nombre,
-        concepto: 'Plan ' + plan + ' (' + fechaInicio + ' → ' + fechaFin + ')',
+        concepto: conceptoPago,
         monto: precio,
         metodo: 'Renovación',
         estado: 'Pagado',
@@ -4492,7 +4688,7 @@
       payments.push({
         fecha: fechaInicio,
         cliente: c.nombre,
-        concepto: 'Plan ' + plan + ' (' + fechaInicio + ' → ' + fechaFin + ')',
+        concepto: conceptoPago,
         monto: precio,
         metodo: 'Renovación',
         estado: 'Pendiente',
@@ -4528,6 +4724,23 @@
     }, 50);
   }
 
+  function resetHistFiltro() {
+    const b = document.getElementById('histBuscarCliente'); if (b) b.value = '';
+    const e = document.getElementById('histFiltroEstado'); if (e) e.value = 'todos';
+    const pg = document.getElementById('histFiltroPago'); if (pg) pg.value = 'todos';
+    ['histDesde','histHasta'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderHistorial();
+  }
+
+  function toggleHistGrupo(rowId) {
+    const row = document.getElementById(rowId);
+    const arrow = document.getElementById(rowId + '_arrow');
+    if (!row) return;
+    const oculto = row.style.display === 'none';
+    row.style.display = oculto ? 'table-row' : 'none';
+    if (arrow) arrow.textContent = oculto ? '▾' : '▸';
+  }
+
   function renderHistorial() {
     const body = document.getElementById('historialBody');
     const empty = document.getElementById('emptyHistorial');
@@ -4536,57 +4749,80 @@
     const buscar = (document.getElementById('histBuscarCliente').value || '').toLowerCase();
     const fEstado = document.getElementById('histFiltroEstado').value;
     const fPago = document.getElementById('histFiltroPago').value;
+    const hDesde = (document.getElementById('histDesde') || {}).value || '';
+    const hHasta = (document.getElementById('histHasta') || {}).value || '';
 
-    // Aplanar todos los planes
-    const filas = [];
+    function planPasa(p) {
+      if (fEstado === 'activo' && !(p.activo && !p.cerrado)) return false;
+      if (fEstado === 'cerrado' && !p.cerrado) return false;
+      if (fPago !== 'todos' && p.estadoPago !== fPago) return false;
+      if (hDesde && (!p.fechaInicio || p.fechaInicio < hDesde)) return false;
+      if (hHasta && (!p.fechaInicio || p.fechaInicio > hHasta)) return false;
+      return true;
+    }
+
+    // Agrupar por cliente: 1 fila por persona, expandible
+    const grupos = [];
     clients.forEach((c, idxC) => {
-      (c.historialPlanes || []).forEach(p => filas.push({ cliente: c, idxCliente: idxC, plan: p }));
+      if (buscar && !c.nombre.toLowerCase().includes(buscar)) return;
+      const planes = (c.historialPlanes || []).filter(planPasa);
+      if (planes.length === 0) return;
+      grupos.push({ cliente: c, idxCliente: idxC, planes });
     });
 
-    let filtradas = filas;
-    if (buscar) filtradas = filtradas.filter(f => f.cliente.nombre.toLowerCase().includes(buscar));
-    if (fEstado === 'activo') filtradas = filtradas.filter(f => f.plan.activo && !f.plan.cerrado);
-    if (fEstado === 'cerrado') filtradas = filtradas.filter(f => f.plan.cerrado);
-    if (fPago !== 'todos') filtradas = filtradas.filter(f => f.plan.estadoPago === fPago);
+    // Stats (sobre planes filtrados)
+    const todos = grupos.reduce((acc, g) => acc.concat(g.planes), []);
+    document.getElementById('hist-total').textContent = todos.length;
+    document.getElementById('hist-activos').textContent = todos.filter(p => p.activo && !p.cerrado).length;
+    document.getElementById('hist-cobrado').textContent = '$' + todos.filter(p => p.estadoPago === 'Pagado').reduce((s,p) => s + (p.precio||0), 0).toLocaleString();
+    document.getElementById('hist-pendiente').textContent = '$' + todos.filter(p => p.estadoPago !== 'Pagado').reduce((s,p) => s + (p.precio||0), 0).toLocaleString();
 
-    // Stats
-    const totalPlanes = filas.length;
-    const activos = filas.filter(f => f.plan.activo && !f.plan.cerrado).length;
-    const cobrado = filas.filter(f => f.plan.estadoPago === 'Pagado').reduce((s,f) => s + (f.plan.precio || 0), 0);
-    const pendiente = filas.filter(f => f.plan.estadoPago !== 'Pagado').reduce((s,f) => s + (f.plan.precio || 0), 0);
-    document.getElementById('hist-total').textContent = totalPlanes;
-    document.getElementById('hist-activos').textContent = activos;
-    document.getElementById('hist-cobrado').textContent = '$' + cobrado.toLocaleString();
-    document.getElementById('hist-pendiente').textContent = '$' + pendiente.toLocaleString();
-
-    if (filtradas.length === 0) {
-      body.innerHTML = ''; empty.style.display = 'block'; return;
-    }
+    if (grupos.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
-    // Ordenar por fechaInicio descendente
-    filtradas.sort((a,b) => (b.plan.fechaInicio || '').localeCompare(a.plan.fechaInicio || ''));
+    grupos.sort((a,b) => a.cliente.nombre.localeCompare(b.cliente.nombre));
 
-    body.innerHTML = filtradas.map(f => {
-      const p = f.plan;
-      const dias = p.dias || [];
-      const entregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length;
-      const noEntregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && !p.diasEstado[d].entregado && p.diasEstado[d].razon).length;
-      const total = dias.length;
-      const planClass = p.plan === 'Semanal' ? 'plan-semanal' : p.plan === 'Quincenal' ? 'plan-quincenal' : 'plan-mensual';
-      const estadoTexto = p.cerrado ? '<span class="status status-retirado">Cerrado</span>' : (p.activo ? '<span class="status status-activo">Activo</span>' : '<span class="status status-pendiente">—</span>');
-      const pagoTexto = p.estadoPago === 'Pagado' ? '<span class="status status-activo">Pagado</span>' : '<span class="status status-pendiente">Pendiente</span>';
-      return '<tr style="cursor:pointer;" onclick="openPlanDetalle(' + f.idxCliente + ',\'' + p.id + '\')">' +
-        '<td><strong>' + f.cliente.nombre + '</strong></td>' +
-        '<td><span class="plan-badge ' + planClass + '">' + p.plan + '</span></td>' +
-        '<td>' + p.fechaInicio + '</td>' +
-        '<td>' + p.fechaFin + '</td>' +
-        '<td><strong>' + entregados + '/' + total + '</strong>' + (noEntregados > 0 ? ' <span style="color:#FFA000; font-size:10px;">(' + noEntregados + ' no entr.)</span>' : '') + '</td>' +
-        '<td>$' + (p.precio || 0).toLocaleString() + '</td>' +
-        '<td>' + pagoTexto + '</td>' +
-        '<td>' + estadoTexto + '</td>' +
-        '<td><button class="btn btn-small btn-secondary" onclick="event.stopPropagation();openPlanDetalle(' + f.idxCliente + ',\'' + p.id + '\')">Ver</button></td>' +
-        '</tr>';
+    body.innerHTML = grupos.map(g => {
+      const c = g.cliente;
+      const planesOrd = g.planes.slice().sort((a,b) => (b.fechaInicio||'').localeCompare(a.fechaInicio||''));
+      const totalComprado = g.planes.reduce((s,p) => s + (p.precio||0), 0);
+      const entregadosTot = g.planes.reduce((s,p) => s + ((p.dias||[]).filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length), 0);
+      const diasTot = g.planes.reduce((s,p) => s + (p.dias||[]).length, 0);
+      const estadoCli = c.estado === 'Activo' ? '<span class="status status-activo">Activo</span>'
+        : c.estado === 'Por confirmar' ? '<span class="status status-pendiente">Por confirmar</span>'
+        : '<span class="status status-retirado">' + (c.estado || 'Inactivo') + '</span>';
+      const rowId = 'histgrp_' + g.idxCliente;
+
+      const detalle = planesOrd.map(p => {
+        const dias = p.dias || [];
+        const entregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length;
+        const total = dias.length;
+        const planClass = p.plan === 'Semanal' ? 'plan-semanal' : p.plan === 'Quincenal' ? 'plan-quincenal' : 'plan-mensual';
+        const estadoTexto = p.cerrado ? '<span class="status status-retirado">Cerrado</span>' : (p.activo ? '<span class="status status-activo">Activo</span>' : '<span class="status status-pendiente">—</span>');
+        const pagoTexto = p.estadoPago === 'Pagado' ? '<span class="status status-activo">Pagado</span>' : '<span class="status status-pendiente">Pendiente</span>';
+        return '<div onclick="openPlanDetalle(' + g.idxCliente + ',\'' + p.id + '\')" style="cursor:pointer; display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 4px; border-bottom:1px solid var(--borde); font-size:12px;">' +
+          '<span class="plan-badge ' + planClass + '">' + p.plan + '</span>' +
+          '<span style="color:#666;">' + p.fechaInicio + ' → ' + p.fechaFin + '</span>' +
+          '<span><strong>' + entregados + '/' + total + '</strong> entr.</span>' +
+          '<span><strong>$' + (p.precio||0).toLocaleString() + '</strong></span>' +
+          '<span>' + pagoTexto + '</span>' +
+          '<span>' + estadoTexto + '</span>' +
+          '<button class="btn btn-small btn-secondary" style="margin-left:auto;" onclick="event.stopPropagation();openPlanDetalle(' + g.idxCliente + ',\'' + p.id + '\')">Ver</button>' +
+          '</div>';
+      }).join('');
+
+      return '<tr style="cursor:pointer;" onclick="toggleHistGrupo(\'' + rowId + '\')">' +
+          '<td><strong>' + c.nombre + '</strong></td>' +
+          '<td>' + g.planes.length + ' plan' + (g.planes.length === 1 ? '' : 'es') + '</td>' +
+          '<td><strong>$' + totalComprado.toLocaleString() + '</strong></td>' +
+          '<td>' + entregadosTot + '/' + diasTot + '</td>' +
+          '<td>' + estadoCli + '</td>' +
+          '<td><span id="' + rowId + '_arrow">▸</span></td>' +
+        '</tr>' +
+        '<tr id="' + rowId + '" style="display:none;"><td colspan="6" style="background:#FEFCF8; padding:4px 16px 10px;">' +
+          '<div style="font-size:10px; color:var(--gris); text-transform:uppercase; letter-spacing:1px; padding:8px 0 4px;">Compras de ' + c.nombre + '</div>' +
+          detalle +
+        '</td></tr>';
     }).join('');
   }
 
@@ -4886,7 +5122,7 @@
     csv += '#,Nombre,Telefono,Direccion,Referencia,Barrio,Plan,Almuerzos Total,Almuerzos Usados,Almuerzos Restantes,Tipo Entrega,Estado,Kit,Fecha Inicio,Fecha Vence,Dias Programados,Notas\n';
     clients.forEach((c, i) => {
       const schedule = getClientSchedule(i);
-      const totalAlm = DIAS_PLAN[c.plan] || 5;
+      const totalAlm = c.plan === 'Individual' ? schedule.length : (DIAS_PLAN[c.plan] || 5);
       const usados = Object.keys(deliveries).filter(d => deliveries[d] && deliveries[d][c.nombre]).length;
       const restantes = totalAlm - usados;
       const vence = c.inicio ? calcVence(c.inicio, c.plan) : '';
@@ -5013,10 +5249,16 @@
 
     clients.forEach((c, idx) => {
       if (c.estado === 'Retirado') return;
-      const schedule = getClientSchedule(idx);
-      schedule.forEach(dateStr => {
+      const tipo = (c.entrega || '').includes('noche') || (c.entrega || '').includes('nocturna') ? 'noche' : 'manana';
+      // Dias del cliente: schedule (planeados/futuros del plan activo)
+      // + dias YA entregados (se conservan en el almanaque aunque el plan termine)
+      const fechasSet = new Set(getClientSchedule(idx));
+      Object.keys(deliveries).forEach(d => {
+        if (deliveries[d] && deliveries[d][c.nombre] === true) fechasSet.add(d);
+      });
+      fechasSet.forEach(dateStr => {
         if (dayMap[dateStr]) {
-          const tipo = (c.entrega || '').includes('noche') || (c.entrega || '').includes('nocturna') ? 'noche' : 'manana';
+          if (dayMap[dateStr][tipo].includes(c.nombre)) return; // evitar duplicado
           dayMap[dateStr][tipo].push(c.nombre);
           totalEntregas++;
           if (tipo === 'manana') totalManana++; else totalNoche++;
