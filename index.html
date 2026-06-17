@@ -1151,7 +1151,7 @@
 
     <div class="stats-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
       <div class="stat-card menta">
-        <div class="stat-label">Planes totales</div>
+        <div class="stat-label">Compras totales</div>
         <div class="stat-value" id="hist-total">0</div>
       </div>
       <div class="stat-card terra">
@@ -4760,22 +4760,35 @@
       if (hHasta && (!p.fechaInicio || p.fechaInicio > hHasta)) return false;
       return true;
     }
+    // Pagos sueltos = compras registradas como Pago (clientes nuevos), sin plan vinculado ni de evento
+    function pagoPasa(p) {
+      if (fEstado === 'activo' || fEstado === 'cerrado') return false; // esos filtros son de planes
+      if (fPago !== 'todos' && p.estado !== fPago) return false;
+      if (hDesde && (!p.fecha || p.fecha < hDesde)) return false;
+      if (hHasta && (!p.fecha || p.fecha > hHasta)) return false;
+      return true;
+    }
 
-    // Agrupar por cliente: 1 fila por persona, expandible
+    // Agrupar por cliente: 1 fila por persona, expandible (planes + pagos sueltos)
     const grupos = [];
     clients.forEach((c, idxC) => {
       if (buscar && !c.nombre.toLowerCase().includes(buscar)) return;
       const planes = (c.historialPlanes || []).filter(planPasa);
-      if (planes.length === 0) return;
-      grupos.push({ cliente: c, idxCliente: idxC, planes });
+      const pagos = payments.filter(p => p.cliente === c.nombre && !p.planRef && !p.eventoPedidoRef).filter(pagoPasa);
+      if (planes.length === 0 && pagos.length === 0) return;
+      grupos.push({ cliente: c, idxCliente: idxC, planes, pagos });
     });
 
-    // Stats (sobre planes filtrados)
-    const todos = grupos.reduce((acc, g) => acc.concat(g.planes), []);
-    document.getElementById('hist-total').textContent = todos.length;
-    document.getElementById('hist-activos').textContent = todos.filter(p => p.activo && !p.cerrado).length;
-    document.getElementById('hist-cobrado').textContent = '$' + todos.filter(p => p.estadoPago === 'Pagado').reduce((s,p) => s + (p.precio||0), 0).toLocaleString();
-    document.getElementById('hist-pendiente').textContent = '$' + todos.filter(p => p.estadoPago !== 'Pagado').reduce((s,p) => s + (p.precio||0), 0).toLocaleString();
+    // Stats (planes + pagos sueltos)
+    let nCompras = 0, nActivos = 0, cobrado = 0, pendiente = 0;
+    grupos.forEach(g => {
+      g.planes.forEach(p => { nCompras++; if (p.activo && !p.cerrado) nActivos++; if (p.estadoPago === 'Pagado') cobrado += (p.precio||0); else pendiente += (p.precio||0); });
+      g.pagos.forEach(p => { nCompras++; if (p.estado === 'Pagado') cobrado += (p.monto||0); else pendiente += (p.monto||0); });
+    });
+    document.getElementById('hist-total').textContent = nCompras;
+    document.getElementById('hist-activos').textContent = nActivos;
+    document.getElementById('hist-cobrado').textContent = '$' + cobrado.toLocaleString();
+    document.getElementById('hist-pendiente').textContent = '$' + pendiente.toLocaleString();
 
     if (grupos.length === 0) { body.innerHTML = ''; empty.style.display = 'block'; return; }
     empty.style.display = 'none';
@@ -4785,7 +4798,9 @@
     body.innerHTML = grupos.map(g => {
       const c = g.cliente;
       const planesOrd = g.planes.slice().sort((a,b) => (b.fechaInicio||'').localeCompare(a.fechaInicio||''));
-      const totalComprado = g.planes.reduce((s,p) => s + (p.precio||0), 0);
+      const pagosOrd = g.pagos.slice().sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+      const numCompras = g.planes.length + g.pagos.length;
+      const totalComprado = g.planes.reduce((s,p) => s + (p.precio||0), 0) + g.pagos.reduce((s,p) => s + (p.monto||0), 0);
       const entregadosTot = g.planes.reduce((s,p) => s + ((p.dias||[]).filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length), 0);
       const diasTot = g.planes.reduce((s,p) => s + (p.dias||[]).length, 0);
       const estadoCli = c.estado === 'Activo' ? '<span class="status status-activo">Activo</span>'
@@ -4793,7 +4808,7 @@
         : '<span class="status status-retirado">' + (c.estado || 'Inactivo') + '</span>';
       const rowId = 'histgrp_' + g.idxCliente;
 
-      const detalle = planesOrd.map(p => {
+      const detallePlanes = planesOrd.map(p => {
         const dias = p.dias || [];
         const entregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length;
         const total = dias.length;
@@ -4811,9 +4826,24 @@
           '</div>';
       }).join('');
 
+      const detallePagos = pagosOrd.map(p => {
+        const pagoTexto = p.estado === 'Pagado' ? '<span class="status status-activo">Pagado</span>' : '<span class="status status-pendiente">Pendiente</span>';
+        return '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 4px; border-bottom:1px solid var(--borde); font-size:12px;">' +
+          '<span class="plan-badge" style="background:#EDE3F6; color:#6A3AA0;">Pago</span>' +
+          '<span style="color:#666;">' + (p.fecha || '') + '</span>' +
+          '<span>' + (p.concepto || '') + '</span>' +
+          '<span style="margin-left:auto;"><strong>$' + (p.monto||0).toLocaleString() + '</strong></span>' +
+          '<span>' + pagoTexto + '</span>' +
+          '<span style="font-size:10px; color:#999;">' + (p.metodo || '') + '</span>' +
+          '</div>';
+      }).join('');
+
+      const detalle = (detallePlanes || '') +
+        (detallePagos ? '<div style="font-size:10px; color:var(--gris); text-transform:uppercase; letter-spacing:1px; padding:10px 0 4px;">Pagos sueltos</div>' + detallePagos : '');
+
       return '<tr style="cursor:pointer;" onclick="toggleHistGrupo(\'' + rowId + '\')">' +
           '<td><strong>' + c.nombre + '</strong></td>' +
-          '<td>' + g.planes.length + ' plan' + (g.planes.length === 1 ? '' : 'es') + '</td>' +
+          '<td>' + numCompras + ' compra' + (numCompras === 1 ? '' : 's') + '</td>' +
           '<td><strong>$' + totalComprado.toLocaleString() + '</strong></td>' +
           '<td>' + entregadosTot + '/' + diasTot + '</td>' +
           '<td>' + estadoCli + '</td>' +
