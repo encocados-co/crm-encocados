@@ -854,6 +854,7 @@
           <div class="filter-btn" onclick="filterPlan('Semanal', this)">Semanal</div>
           <div class="filter-btn" onclick="filterPlan('Quincenal', this)">Quincenal</div>
           <div class="filter-btn" onclick="filterPlan('Mensual', this)">Mensual</div>
+          <div class="filter-btn" onclick="filterPlan('Ejecutivo', this)">Ejecutivo</div>
         </div>
       </div>
       <table>
@@ -1466,10 +1467,19 @@
       <div class="form-group">
         <label class="form-label">Plan</label>
         <select class="form-input" id="fPlan" onchange="updatePrecio()">
-          <option value="Semanal">Semanal — $90.000</option>
-          <option value="Quincenal">Quincenal — $170.000</option>
-          <option value="Mensual">Mensual — $320.000</option>
-          <option value="Individual">Almuerzos individuales — $18.000 c/u</option>
+          <optgroup label="Plan completo (sopa + ensalada + seco + bebida)">
+            <option value="Semanal">Semanal — $90.000</option>
+            <option value="Quincenal">Quincenal — $170.000</option>
+            <option value="Mensual">Mensual — $320.000</option>
+          </optgroup>
+          <optgroup label="Plan ejecutivo (ensalada + seco, sin sopa ni bebida)">
+            <option value="Ejecutivo Semanal">Ejecutivo Semanal — $75.000</option>
+            <option value="Ejecutivo Quincenal">Ejecutivo Quincenal — $150.000</option>
+            <option value="Ejecutivo Mensual">Ejecutivo Mensual — $290.000</option>
+          </optgroup>
+          <optgroup label="Otros">
+            <option value="Individual">Almuerzos individuales — $18.000 c/u</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -1546,10 +1556,19 @@
       <div class="form-group">
         <label class="form-label">Plan nuevo</label>
         <select class="form-input" id="rPlan" onchange="renovarRecalcular()">
-          <option value="Semanal">Semanal — $90.000 (5 días)</option>
-          <option value="Quincenal">Quincenal — $170.000 (10 días)</option>
-          <option value="Mensual">Mensual — $320.000 (20 días)</option>
-          <option value="Individual">Almuerzos individuales — $18.000 c/u</option>
+          <optgroup label="Plan completo (sopa + ensalada + seco + bebida)">
+            <option value="Semanal">Semanal — $90.000 (5 días)</option>
+            <option value="Quincenal">Quincenal — $170.000 (10 días)</option>
+            <option value="Mensual">Mensual — $320.000 (20 días)</option>
+          </optgroup>
+          <optgroup label="Plan ejecutivo (ensalada + seco, sin sopa ni bebida)">
+            <option value="Ejecutivo Semanal">Ejecutivo Semanal — $75.000 (5 días)</option>
+            <option value="Ejecutivo Quincenal">Ejecutivo Quincenal — $150.000 (10 días)</option>
+            <option value="Ejecutivo Mensual">Ejecutivo Mensual — $290.000 (20 días)</option>
+          </optgroup>
+          <optgroup label="Otros">
+            <option value="Individual">Almuerzos individuales — $18.000 c/u</option>
+          </optgroup>
         </select>
       </div>
       <div class="form-group">
@@ -1641,6 +1660,11 @@
             <option value="Plan Semanal">Plan Semanal ($90.000)</option>
             <option value="Plan Quincenal">Plan Quincenal ($170.000)</option>
             <option value="Plan Mensual">Plan Mensual ($320.000)</option>
+          </optgroup>
+          <optgroup label="Almuerzo ejecutivo (sin sopa ni bebida)">
+            <option value="Plan Ejecutivo Semanal">Plan Ejecutivo Semanal ($75.000)</option>
+            <option value="Plan Ejecutivo Quincenal">Plan Ejecutivo Quincenal ($150.000)</option>
+            <option value="Plan Ejecutivo Mensual">Plan Ejecutivo Mensual ($290.000)</option>
           </optgroup>
           <optgroup label="Desayuno">
             <option value="Desayuno Semanal">Desayuno Semanal ($60.000)</option>
@@ -2299,8 +2323,17 @@
   window.doLogout = doLogout;
   window.showSync = showSync;
 
-  const PRECIOS = { 'Semanal': 90000, 'Quincenal': 170000, 'Mensual': 320000 };
-  const DIAS_PLAN = { 'Semanal': 5, 'Quincenal': 10, 'Mensual': 20 };
+  const PRECIOS = {
+    'Semanal': 90000, 'Quincenal': 170000, 'Mensual': 320000,
+    'Ejecutivo Semanal': 75000, 'Ejecutivo Quincenal': 150000, 'Ejecutivo Mensual': 290000
+  };
+  const DIAS_PLAN = {
+    'Semanal': 5, 'Quincenal': 10, 'Mensual': 20,
+    'Ejecutivo Semanal': 5, 'Ejecutivo Quincenal': 10, 'Ejecutivo Mensual': 20
+  };
+  // Planes sin sopa ni bebida (solo ensalada + plato fuerte)
+  const PLANES_EJECUTIVO = ['Ejecutivo Semanal', 'Ejecutivo Quincenal', 'Ejecutivo Mensual'];
+  const esPlanEjecutivo = p => PLANES_EJECUTIVO.includes(p);
 
   async function save() {
     if (!window._fb || !window.currentUser) {
@@ -2425,7 +2458,7 @@
     const empty = document.getElementById('emptyClients');
     let filtered = clients;
 
-    if (filter !== 'todos') filtered = filtered.filter(c => c.plan === filter);
+    if (filter !== 'todos') filtered = filtered.filter(c => (c.plan || '').includes(filter));
     if (search) filtered = filtered.filter(c => c.nombre.toLowerCase().includes(search.toLowerCase()));
 
     if (filtered.length === 0) {
@@ -2436,7 +2469,7 @@
 
     empty.style.display = 'none';
     body.innerHTML = filtered.map((c, i) => {
-      const planClass = c.plan === 'Semanal' ? 'plan-semanal' : c.plan === 'Quincenal' ? 'plan-quincenal' : c.plan === 'Individual' ? 'plan-individual' : 'plan-mensual';
+      const planClass = /Semanal/.test(c.plan) ? 'plan-semanal' : /Quincenal/.test(c.plan) ? 'plan-quincenal' : c.plan === 'Individual' ? 'plan-individual' : 'plan-mensual';
       const statusClass = c.estado === 'Activo' ? 'status-activo' : c.estado === 'Por confirmar' ? 'status-pendiente' : 'status-retirado';
       const delivClass = c.entrega === 'Domicilio dia' ? 'delivery-dia' : 'delivery-noche';
       const idx = clients.indexOf(c);
@@ -2488,9 +2521,9 @@
 
   function renderDashboard() {
     const activos = clients.filter(c => c.estado === 'Activo' || c.estado === 'Por confirmar');
-    const sem = activos.filter(c => c.plan === 'Semanal').length;
-    const quin = activos.filter(c => c.plan === 'Quincenal').length;
-    const men = activos.filter(c => c.plan === 'Mensual').length;
+    const sem = activos.filter(c => /Semanal/.test(c.plan)).length;
+    const quin = activos.filter(c => /Quincenal/.test(c.plan)).length;
+    const men = activos.filter(c => /Mensual/.test(c.plan)).length;
 
     document.getElementById('dash-clientes').textContent = activos.length;
     document.getElementById('dash-planes').textContent = sem + ' sem · ' + quin + ' quin · ' + men + ' men';
@@ -3706,6 +3739,7 @@
     const concepto = document.getElementById('pConcepto').value;
     const montos = {
       'Plan Semanal': 90000, 'Plan Quincenal': 170000, 'Plan Mensual': 320000,
+      'Plan Ejecutivo Semanal': 75000, 'Plan Ejecutivo Quincenal': 150000, 'Plan Ejecutivo Mensual': 290000,
       'Desayuno Semanal': 60000, 'Desayuno Quincenal': 110000, 'Desayuno Mensual': 200000,
       'Combo Semanal': 150000, 'Combo Quincenal': 280000, 'Combo Mensual': 520000,
       'Kit Cocas': 80000, 'Kit Cocas dto': 64000, 'Set cocas desayuno': 52000,
@@ -4812,7 +4846,7 @@
         const dias = p.dias || [];
         const entregados = dias.filter(d => p.diasEstado && p.diasEstado[d] && p.diasEstado[d].entregado).length;
         const total = dias.length;
-        const planClass = p.plan === 'Semanal' ? 'plan-semanal' : p.plan === 'Quincenal' ? 'plan-quincenal' : 'plan-mensual';
+        const planClass = /Semanal/.test(p.plan) ? 'plan-semanal' : /Quincenal/.test(p.plan) ? 'plan-quincenal' : 'plan-mensual';
         const estadoTexto = p.cerrado ? '<span class="status status-retirado">Cerrado</span>' : (p.activo ? '<span class="status status-activo">Activo</span>' : '<span class="status status-pendiente">—</span>');
         const pagoTexto = p.estadoPago === 'Pagado' ? '<span class="status status-activo">Pagado</span>' : '<span class="status status-pendiente">Pendiente</span>';
         return '<div onclick="openPlanDetalle(' + g.idxCliente + ',\'' + p.id + '\')" style="cursor:pointer; display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:8px 4px; border-bottom:1px solid var(--borde); font-size:12px;">' +
@@ -5217,9 +5251,9 @@
 
     // ===== RESUMEN =====
     const activos = clients.filter(c => c.estado === 'Activo');
-    const sem = activos.filter(c => c.plan === 'Semanal').length;
-    const quin = activos.filter(c => c.plan === 'Quincenal').length;
-    const men = activos.filter(c => c.plan === 'Mensual').length;
+    const sem = activos.filter(c => /Semanal/.test(c.plan)).length;
+    const quin = activos.filter(c => /Quincenal/.test(c.plan)).length;
+    const men = activos.filter(c => /Mensual/.test(c.plan)).length;
     const totalIngresos = payments.filter(p => p.estado === 'Pagado').reduce((s,p) => s + (p.monto||0), 0);
 
     csv += '\n=== RESUMEN ===\n';
