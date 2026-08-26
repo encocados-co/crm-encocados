@@ -663,6 +663,10 @@
     <span class="icon">📜</span>
     <span>Historial</span>
   </div>
+  <div class="nav-item" data-page="servicios" onclick="showPage('servicios')">
+    <span class="icon">🧾</span>
+    <span>Servicios</span>
+  </div>
   <div class="nav-item" data-page="recetario" onclick="showPage('recetario')">
     <span class="icon">📖</span>
     <span>Recetario</span>
@@ -750,6 +754,9 @@
       </div>
       <div class="mobile-more-item" data-page="historial" onclick="showPage('historial')">
         <span class="icon">📜</span><span>Historial</span>
+      </div>
+      <div class="mobile-more-item" data-page="servicios" onclick="showPage('servicios')">
+        <span class="icon">🧾</span><span>Servicios</span>
       </div>
       <div class="mobile-more-item" data-page="recetario" onclick="showPage('recetario')">
         <span class="icon">📖</span><span>Recetario</span>
@@ -1142,6 +1149,30 @@
   </div>
 
   <!-- ===== HISTORIAL DE COMPRAS ===== -->
+  <!-- ===== SERVICIOS (CATÁLOGO) ===== -->
+  <div class="page" id="page-servicios">
+    <div class="page-header">
+      <div class="page-title">Servicios</div>
+      <button class="btn btn-primary" onclick="openServicioModal()">+ Nuevo Servicio</button>
+    </div>
+    <div style="background:#FFF0DC; border-left:4px solid #E5461A; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; color:#555;">
+      Crea servicios personalizados (con nombre, valor y nº de días). Aparecerán como opción al <strong>Registrar Pago</strong> y al <strong>Renovar</strong> un cliente, con su valor y días ya puestos.
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Servicio</th><th>Valor</th><th>Días</th><th></th></tr>
+        </thead>
+        <tbody id="serviciosBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyServicios" style="display:none;">
+        <div class="icon">🧾</div>
+        <h3>Sin servicios</h3>
+        <p>Crea tu primer servicio personalizado con "+ Nuevo Servicio"</p>
+      </div>
+    </div>
+  </div>
+
   <div class="page" id="page-historial">
     <div class="page-header">
       <div class="page-title">Historial de compras</div>
@@ -1969,6 +2000,39 @@
   </div>
 </div>
 
+<!-- MODAL SERVICIO -->
+<div class="modal-overlay" id="servicioModal">
+  <div class="modal">
+    <div class="modal-title" id="servicioModalTitle">Nuevo Servicio</div>
+    <input type="hidden" id="servicioIdx" value="-1">
+    <div class="form-group">
+      <label class="form-label">Nombre del servicio</label>
+      <input type="text" class="form-input" id="svcNombre" placeholder="Ej: Plan Fit Semanal, Almuerzo sin carne...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Valor total</label>
+        <input type="number" class="form-input" id="svcValor" placeholder="75000" min="0" step="1000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">N° de días / almuerzos</label>
+        <input type="number" class="form-input" id="svcDias" placeholder="5" min="1" step="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Qué incluye (opcional)</label>
+      <input type="text" class="form-input" id="svcDescripcion" placeholder="Ej: ensalada + plato fuerte, sin sopa ni bebida">
+    </div>
+    <div style="background:#FFF0DC; padding:10px 12px; border-radius:8px; font-size:11px; color:#666; margin-bottom:4px;">
+      Este servicio aparecerá como opción al <strong>crear un cliente</strong>, al <strong>renovar</strong> y al <strong>registrar un pago</strong>, con su valor y días ya puestos.
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeServicioModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveServicio()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL USUARIO -->
 <div class="modal-overlay" id="usuarioModal">
   <div class="modal">
@@ -2178,6 +2242,7 @@
   let proveedores = [];
   let productos = [];
   let eventos = [];
+  let servicios = [];
   let usuariosLocales = [];
 
   // currentUser se define al hacer login
@@ -2291,11 +2356,12 @@
         proveedores = d.proveedores || [];
         productos = d.productos || [];
         eventos = d.eventos || [];
+        servicios = d.servicios || [];
         migrarEntregasAntiguas();
         migrarClientesAHistorial();
         chequearCierresAutomaticos();
       } else {
-        clients = []; payments = []; deliveries = {}; menus = []; recetas = []; cocasLog = []; compras = []; proveedores = []; productos = []; eventos = [];
+        clients = []; payments = []; deliveries = {}; menus = []; recetas = []; cocasLog = []; compras = []; proveedores = []; productos = []; eventos = []; servicios = [];
       }
       if (typeof renderAll === 'function') renderAll();
     }, (err) => {
@@ -2309,7 +2375,7 @@
     if (role === 'admin') return; // ve todo
 
     const permisos = {
-      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores', 'eventos', 'historial'],
+      chef: ['dashboard', 'menus', 'almanaque', 'entregas', 'recetario', 'clientes', 'productos', 'proveedores', 'eventos', 'historial', 'servicios'],
       domiciliario: ['dashboard', 'ruta', 'cocas', 'entregas']
     };
     const permitidas = permisos[role] || ['dashboard'];
@@ -2343,7 +2409,7 @@
     try {
       showSync('syncing', 'Guardando...');
       const payload = JSON.parse(JSON.stringify({
-        clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos, eventos,
+        clients, payments, deliveries, menus, recetas, cocasLog, compras, proveedores, productos, eventos, servicios,
         updatedAt: new Date().toISOString(),
         updatedBy: window.currentUser.email
       }));
@@ -2447,6 +2513,7 @@
     if (typeof renderHistorial === 'function') renderHistorial();
     if (typeof renderProductos === 'function') renderProductos();
     if (typeof renderProveedores === 'function') renderProveedores();
+    if (typeof renderServicios === 'function') renderServicios();
     if (typeof renderRuta === 'function') renderRuta();
     if (typeof renderUsuarios === 'function') renderUsuarios();
     document.getElementById('clientCount').textContent = clients.filter(c => c.estado !== 'Retirado').length;
@@ -2477,7 +2544,7 @@
       const vence = c.plan === 'Individual'
         ? (schedule.length ? parseFechaLocal(schedule[schedule.length - 1]).toLocaleDateString('es-CO') : '—')
         : (c.inicio ? calcVence(c.inicio, c.plan) : '—');
-      const totalAlm = c.plan === 'Individual' ? schedule.length : (DIAS_PLAN[c.plan] || 5);
+      const totalAlm = c.plan === 'Individual' ? schedule.length : getDiasPlan(c.plan);
       const entregados = schedule.filter(d => {
         const key = d.replace(/-/g, '');
         return deliveries[d] && deliveries[d][c.nombre];
@@ -2619,7 +2686,7 @@
         const dias = getClientSchedule(idx);
         const fechaInicio = c.inicio || (dias[0] || hoyISO());
         const fechaFin = dias.length > 0 ? dias[dias.length - 1] : fechaInicio;
-        const precio = c.plan === 'Individual' ? 18000 * dias.length : (PRECIOS[c.plan] || 0);
+        const precio = c.plan === 'Individual' ? 18000 * dias.length : getPrecioPlan(c.plan);
         const diasEstado = {};
         dias.forEach(d => {
           diasEstado[d] = {
@@ -3331,7 +3398,7 @@
   let calViewYear = 2026;
 
   function maxDiasPlan(plan) {
-    return plan === 'Individual' ? 999 : (DIAS_PLAN[plan] || 5);
+    return plan === 'Individual' ? 999 : getDiasPlan(plan);
   }
 
   function renderCalendar() {
@@ -3627,14 +3694,14 @@
 
   function calcVence(inicio, plan) {
     if (!inicio) return '—';
-    const dias = DIAS_PLAN[plan] || 5;
+    const dias = getDiasPlan(plan);
     const vence = addDiasHabiles(inicio, dias);
     return vence.toLocaleDateString('es-CO');
   }
 
   function calcVenceDate(inicio, plan) {
     if (!inicio) return null;
-    return addDiasHabiles(inicio, DIAS_PLAN[plan] || 5);
+    return addDiasHabiles(inicio, getDiasPlan(plan));
   }
 
   function diasHabilesEntre(fecha1, fecha2) {
@@ -3747,7 +3814,13 @@
     };
     const otroRow = document.getElementById('pOtroRow');
     if (otroRow) otroRow.style.display = (concepto === 'Otro') ? 'flex' : 'none';
-    if (concepto in montos) document.getElementById('pMonto').value = montos[concepto];
+    if (concepto in montos) {
+      document.getElementById('pMonto').value = montos[concepto];
+      return;
+    }
+    // servicios personalizados creados en la pestana Servicios
+    const svc = buscarServicio(concepto);
+    if (svc) document.getElementById('pMonto').value = Number(svc.valor) || 0;
   }
 
   function savePayment() {
@@ -4229,6 +4302,179 @@
     renderProveedores();
   }
 
+  // ===== SERVICIOS PERSONALIZADOS =====
+  // Un servicio es un plan que crea Valentina: { id, nombre, valor, dias, descripcion }
+  // Se comporta como un plan mas: aparece en los selects y resuelve precio/dias.
+
+  function buscarServicio(nombre) {
+    return servicios.find(s => s.nombre === nombre) || null;
+  }
+
+  // Resuelven precio y dias tanto para planes fijos como para servicios personalizados
+  function getPrecioPlan(plan) {
+    if (plan in PRECIOS) return PRECIOS[plan];
+    const s = buscarServicio(plan);
+    return s ? (Number(s.valor) || 0) : 0;
+  }
+
+  function getDiasPlan(plan) {
+    if (plan in DIAS_PLAN) return DIAS_PLAN[plan];
+    const s = buscarServicio(plan);
+    return s ? (Number(s.dias) || 5) : 5;
+  }
+
+  function renderServicios() {
+    const body = document.getElementById('serviciosBody');
+    const empty = document.getElementById('emptyServicios');
+    if (!body) return;
+    if (servicios.length === 0) {
+      body.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      refrescarSelectsServicios();
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    body.innerHTML = servicios.map((s, i) => {
+      const desc = s.descripcion
+        ? '<br><span style="font-size:11px;color:#999;">' + s.descripcion + '</span>' : '';
+      const porDia = (Number(s.dias) > 0)
+        ? '<br><span style="font-size:10px;color:#999;">$' +
+          Math.round(Number(s.valor) / Number(s.dias)).toLocaleString('es-CO') + ' c/u</span>' : '';
+      return '<tr>' +
+        '<td><strong>' + (s.nombre || '') + '</strong>' + desc + '</td>' +
+        '<td>$' + (Number(s.valor) || 0).toLocaleString('es-CO') + porDia + '</td>' +
+        '<td>' + (s.dias || '—') + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="btn btn-small btn-secondary" onclick="editServicio(' + i + ')">✎</button> ' +
+          '<button class="btn btn-small btn-secondary" onclick="deleteServicio(' + i + ')">×</button>' +
+        '</td></tr>';
+    }).join('');
+    refrescarSelectsServicios();
+  }
+
+  // Inyecta (o actualiza) el optgroup "Mis servicios" en los selects de plan y de pago
+  function refrescarSelectsServicios() {
+    const money = v => '$' + (Number(v) || 0).toLocaleString('es-CO');
+
+    // selects de plan: nuevo cliente y renovar
+    [['fPlan', false], ['rPlan', true]].forEach(([id, conDias]) => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const prev = sel.value;
+      const viejo = sel.querySelector('optgroup[data-servicios]');
+      if (viejo) viejo.remove();
+      if (servicios.length) {
+        const g = document.createElement('optgroup');
+        g.label = 'Mis servicios';
+        g.setAttribute('data-servicios', '1');
+        g.innerHTML = servicios.map(s =>
+          '<option value="' + s.nombre.replace(/"/g, '&quot;') + '">' + s.nombre +
+          ' — ' + money(s.valor) + (conDias && s.dias ? ' (' + s.dias + ' días)' : '') +
+          '</option>').join('');
+        sel.appendChild(g);
+      }
+      if (prev) sel.value = prev;
+    });
+
+    // select de conceptos en Registrar Pago
+    const pc = document.getElementById('pConcepto');
+    if (pc) {
+      const prev = pc.value;
+      const viejo = pc.querySelector('optgroup[data-servicios]');
+      if (viejo) viejo.remove();
+      if (servicios.length) {
+        const g = document.createElement('optgroup');
+        g.label = 'Mis servicios';
+        g.setAttribute('data-servicios', '1');
+        g.innerHTML = servicios.map(s =>
+          '<option value="' + s.nombre.replace(/"/g, '&quot;') + '">' + s.nombre +
+          ' (' + money(s.valor) + ')</option>').join('');
+        // insertarlo antes del grupo "Otros" si existe
+        const otros = Array.from(pc.querySelectorAll('optgroup'))
+          .find(o => (o.label || '').toLowerCase() === 'otros');
+        if (otros) pc.insertBefore(g, otros); else pc.appendChild(g);
+      }
+      if (prev) pc.value = prev;
+    }
+  }
+
+  function openServicioModal() {
+    document.getElementById('servicioModalTitle').textContent = 'Nuevo Servicio';
+    document.getElementById('servicioIdx').value = -1;
+    document.getElementById('svcNombre').value = '';
+    document.getElementById('svcValor').value = '';
+    document.getElementById('svcDias').value = '';
+    document.getElementById('svcDescripcion').value = '';
+    document.getElementById('servicioModal').classList.add('show');
+  }
+
+  function editServicio(idx) {
+    const s = servicios[idx];
+    if (!s) return;
+    document.getElementById('servicioModalTitle').textContent = 'Editar Servicio';
+    document.getElementById('servicioIdx').value = idx;
+    document.getElementById('svcNombre').value = s.nombre || '';
+    document.getElementById('svcValor').value = s.valor || '';
+    document.getElementById('svcDias').value = s.dias || '';
+    document.getElementById('svcDescripcion').value = s.descripcion || '';
+    document.getElementById('servicioModal').classList.add('show');
+  }
+
+  function closeServicioModal() {
+    document.getElementById('servicioModal').classList.remove('show');
+  }
+
+  function saveServicio() {
+    const nombre = document.getElementById('svcNombre').value.trim();
+    const valor = parseInt(document.getElementById('svcValor').value, 10);
+    const dias = parseInt(document.getElementById('svcDias').value, 10);
+    const idx = parseInt(document.getElementById('servicioIdx').value, 10);
+
+    if (!nombre) { alert('Ponle un nombre al servicio'); return; }
+    if (!valor || valor <= 0) { alert('El valor debe ser mayor que cero'); return; }
+    if (!dias || dias <= 0) { alert('Los días deben ser al menos 1'); return; }
+
+    // no permitir que choque con un plan fijo ni con otro servicio
+    if (nombre in PRECIOS) { alert('Ya existe un plan con ese nombre. Usa otro.'); return; }
+    const choque = servicios.findIndex(s => s.nombre === nombre);
+    if (choque !== -1 && choque !== idx) { alert('Ya tienes un servicio con ese nombre.'); return; }
+
+    const nombreAnterior = idx >= 0 ? servicios[idx].nombre : null;
+    const svc = {
+      id: (idx >= 0 && servicios[idx].id) ? servicios[idx].id : genId('svc'),
+      nombre,
+      valor,
+      dias,
+      descripcion: document.getElementById('svcDescripcion').value.trim()
+    };
+
+    if (idx >= 0) servicios[idx] = svc; else servicios.push(svc);
+
+    // si se renombro, arrastrar el cambio a los clientes que lo tenian
+    if (nombreAnterior && nombreAnterior !== nombre) {
+      clients.forEach(c => { if (c.plan === nombreAnterior) c.plan = nombre; });
+    }
+
+    save();
+    closeServicioModal();
+    renderServicios();
+    renderClients();
+  }
+
+  function deleteServicio(idx) {
+    const s = servicios[idx];
+    if (!s) return;
+    const enUso = clients.filter(c => c.plan === s.nombre && c.estado !== 'Retirado').length;
+    const aviso = enUso
+      ? '\n\nOJO: ' + enUso + ' cliente(s) activo(s) tienen este servicio. Se quedan con el nombre guardado, pero el CRM ya no sabrá su precio ni sus días.'
+      : '';
+    if (!confirm('¿Eliminar el servicio "' + s.nombre + '"?' + aviso)) return;
+    servicios.splice(idx, 1);
+    save();
+    renderServicios();
+    renderClients();
+  }
+
   // ===== EVENTOS / ALMUERZOS ESPECIALES =====
   function genId(prefix) { return prefix + '_' + Date.now() + '_' + Math.floor(Math.random()*10000); }
 
@@ -4640,8 +4886,8 @@
       cantidad = Math.max(1, parseInt(document.getElementById('rCantidadIndividual').value) || 1);
       precioDefault = 18000 * cantidad;
     } else {
-      cantidad = DIAS_PLAN[plan] || 5;
-      precioDefault = PRECIOS[plan] || 0;
+      cantidad = getDiasPlan(plan);
+      precioDefault = getPrecioPlan(plan);
     }
     const dias = calcDiasHabilesDesde(fecha, cantidad);
     document.getElementById('rPrecio').value = precioDefault;
@@ -5186,7 +5432,7 @@
     csv += '#,Nombre,Telefono,Direccion,Referencia,Barrio,Plan,Almuerzos Total,Almuerzos Usados,Almuerzos Restantes,Tipo Entrega,Estado,Kit,Fecha Inicio,Fecha Vence,Dias Programados,Notas\n';
     clients.forEach((c, i) => {
       const schedule = getClientSchedule(i);
-      const totalAlm = c.plan === 'Individual' ? schedule.length : (DIAS_PLAN[c.plan] || 5);
+      const totalAlm = c.plan === 'Individual' ? schedule.length : getDiasPlan(c.plan);
       const usados = Object.keys(deliveries).filter(d => deliveries[d] && deliveries[d][c.nombre]).length;
       const restantes = totalAlm - usados;
       const vence = c.inicio ? calcVence(c.inicio, c.plan) : '';
